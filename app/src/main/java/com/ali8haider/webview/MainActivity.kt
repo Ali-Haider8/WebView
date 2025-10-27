@@ -1,5 +1,6 @@
 package com.ali8haider.webview
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
 import android.content.pm.ActivityInfo
@@ -8,28 +9,25 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.view.ViewGroup
-import android.view.ViewTreeObserver
-import android.view.ViewTreeObserver.OnScrollChangedListener
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
-import android.widget.ProgressBar
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 
 class MainActivity : AppCompatActivity() {
 
 
     private lateinit var mWebView: WebView
-//    private lateinit var myToolBar: Toolbar
+
+    //    private lateinit var myToolBar: Toolbar
     private lateinit var mFrameLayout: FrameLayout
-    private lateinit var mProgressBar: ProgressBar
-    private lateinit var mSwipeRefreshLayout: SwipeRefreshLayout
-    private lateinit var mOnScrollChangedListener: OnScrollChangedListener
+
+    //    private lateinit var mProgressBar: ProgressBar
+//    private lateinit var mSwipeRefreshLayout: SwipeRefreshLayout
+//    private lateinit var mOnScrollChangedListener: OnScrollChangedListener
     private var customView: View? = null
     private var customViewCallback: WebChromeClient.CustomViewCallback? = null
     private lateinit var myWebChromeClient: MyWebChromeClient
@@ -43,37 +41,28 @@ class MainActivity : AppCompatActivity() {
 
 
 //        myToolBar = findViewById(R.id.mToolbar)
-        mFrameLayout = findViewById(R.id.mProgressBarContainer)
-        mProgressBar = findViewById(R.id.mProgressBar)
+        mFrameLayout = findViewById(R.id.fullscreenContainer)
+//        mProgressBar = findViewById(R.id.mProgressBar)
         mWebView = findViewById(R.id.mWebView)
-        mSwipeRefreshLayout = findViewById(R.id.mSwipeRefreshLayout)
+//        mSwipeRefreshLayout = findViewById(R.id.mSwipeRefreshLayout)
         myWebChromeClient = MyWebChromeClient(this)
         myWebViewClient = MyWebViewClient(this)
+        mWebView.webChromeClient = myWebChromeClient
+        mWebView.webViewClient = myWebViewClient
 
         hostname = "https://m.youtube.com"
 
-        setupSwipeRefreshLayout()
+//        setupSwipeRefreshLayout()
         setupWebView()
+        restoreSavedInstanceState(savedInstanceState)
 
         // Handle back button press to navigate within the webView
         onBackPressedDispatcher.addCallback(this, callback)
 
-        val intent = getIntent()
-        val url = intent.getStringExtra("url")
-
-        if (savedInstanceState != null) {
-            mWebView.restoreState(savedInstanceState);
-        } else {
-            if (url != null) mWebView.loadUrl(hostname);
-            else loadUrl();
-        }
-
     }
 
-
+    @SuppressLint("SetJavaScriptEnabled")
     private fun setupWebView() {
-
-        mWebView.webChromeClient = myWebChromeClient
 
         val webSettings: WebSettings = mWebView.settings
 
@@ -90,85 +79,32 @@ class MainActivity : AppCompatActivity() {
         webSettings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW // Allow mixed content
         webSettings.useWideViewPort = true;
         webSettings.layoutAlgorithm = WebSettings.LayoutAlgorithm.NORMAL
-        webSettings.javaScriptCanOpenWindowsAutomatically = true;
+        webSettings.javaScriptCanOpenWindowsAutomatically = true
         webSettings.setSupportMultipleWindows(true)
         webSettings.setGeolocationEnabled(true)
         webSettings.loadWithOverviewMode = true
-        webSettings.cacheMode = WebSettings.LOAD_CACHE_ELSE_NETWORK;
+        webSettings.cacheMode = WebSettings.LOAD_CACHE_ELSE_NETWORK
         webSettings.mediaPlaybackRequiresUserGesture = false
-
-        // Set WebViewClient to handle page navigation
-        mWebView.webViewClient = WebViewClient()
-
-        // Set WebChromeClient to handle fullscreen
-        mWebView.webChromeClient = object : WebChromeClient() {
-            override fun onShowCustomView(view: View?, callback: CustomViewCallback?) {
-                if (customView != null) {
-                    onHideCustomView()
-                    return
-                }
-
-                customView = view
-                customViewCallback = callback
-
-                // Set screen orientation to landscape
-                requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-
-
-                // Hide the WebView
-                mWebView.visibility = View.GONE
-
-                // Show fullscreen container
-                mFrameLayout.visibility = View.VISIBLE
-                mFrameLayout.addView(customView)
-
-                // Hide action bar if present
-                supportActionBar?.hide()
-            }
-
-            override fun onHideCustomView() {
-                if (customView == null) {
-                    return
-                }
-
-                // Set screen orientation back to portrait
-                requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-
-
-                // Hide fullscreen container
-                mFrameLayout.visibility = View.GONE
-                mFrameLayout.removeView(customView)
-                customView = null
-
-                // Show the WebView again
-                mWebView.visibility = View.VISIBLE
-
-                // Show action bar if present
-                supportActionBar?.show()
-
-                customViewCallback?.onCustomViewHidden()
-            }
-        }
 
 
     }
 
-    private fun setupSwipeRefreshLayout() {
+    /*private fun setupSwipeRefreshLayout() {
         mSwipeRefreshLayout.setColorSchemeResources(R.color.purple, R.color.green, R.color.blue, R.color.orange)
         mSwipeRefreshLayout.setOnRefreshListener {
             mWebView.reload()
         }
-    }
+    }*/
 
 
     class MyWebViewClient(private val activity: MainActivity) : WebViewClient() {
         override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
-            activity.mSwipeRefreshLayout.isRefreshing = false
+//            activity.mSwipeRefreshLayout.isRefreshing = false
             super.onPageStarted(view, url, favicon)
         }
 
         override fun onPageFinished(view: WebView?, url: String?) {
-            activity.mSwipeRefreshLayout.isRefreshing = false
+//            activity.mSwipeRefreshLayout.isRefreshing = false
             activity.saveUrl(url.toString())
             super.onPageFinished(view, url)
         }
@@ -185,6 +121,7 @@ class MainActivity : AppCompatActivity() {
 
 
         override fun onShowCustomView(view: View?, callback: CustomViewCallback?) {
+
             Log.d("WebChrome", "onShowCustomView called")
 
             if (customView != null) {
@@ -237,13 +174,12 @@ class MainActivity : AppCompatActivity() {
             customViewCallback = null
         }
 
-        override fun onProgressChanged(view: WebView?, newProgress: Int) {
-            activity.mProgressBar.visibility = View.VISIBLE
+        override fun onProgressChanged(view: WebView?, newProgress: Int) {/*activity.mProgressBar.visibility = View.VISIBLE
             activity.mProgressBar.progress = newProgress
             if (newProgress == 100) {
                 activity.mProgressBar.visibility = View.INVISIBLE
                 activity.mSwipeRefreshLayout.isEnabled = true
-            }
+            }*/
             super.onProgressChanged(view, newProgress)
         }
 
@@ -264,9 +200,10 @@ class MainActivity : AppCompatActivity() {
     fun saveUrl(url: String) {
         if (!url.contains("No Internet") && !url.startsWith("file:///android_asset/")) {
             val sharedPreferences: SharedPreferences = getSharedPreferences("url", MODE_PRIVATE)
-            val editor: SharedPreferences.Editor = sharedPreferences.edit()
-            editor.putString("url", url)
-            editor.apply()
+            sharedPreferences.edit().also {
+                it.putString("url", url)
+                it.apply()
+            }
         }
     }
 
@@ -277,21 +214,38 @@ class MainActivity : AppCompatActivity() {
         Log.d(tag, "onStart called - Activity is now visible")
         // You can perform actions here that need to happen when the activity starts,
         // such as registering listeners, starting animations, or updating UI elements.
-        mSwipeRefreshLayout.getViewTreeObserver().addOnScrollChangedListener {
+        /*mSwipeRefreshLayout.getViewTreeObserver().addOnScrollChangedListener {
             OnScrollChangedListener {
                 if (mWebView.scrollY == 0) mSwipeRefreshLayout.setEnabled(true);
                 else mSwipeRefreshLayout.setEnabled(false);
             }
-        }
+        }*/
     }
 
 
     override fun onStop() {
         Log.d(tag, "onStop called")
-        mSwipeRefreshLayout.getViewTreeObserver().removeOnScrollChangedListener(mOnScrollChangedListener)
+//        mSwipeRefreshLayout.getViewTreeObserver().removeOnScrollChangedListener(mOnScrollChangedListener)
         super.onStop()
     }
 
+
+    private fun restoreSavedInstanceState(savedInstanceState: Bundle?) {
+        val intent = getIntent()
+        val url = intent.getStringExtra("url")
+
+        if (savedInstanceState != null) {
+            mWebView.restoreState(savedInstanceState);
+        } else {
+            if (url != null) mWebView.loadUrl(hostname);
+            else loadUrl();
+        }
+    }
+
+    fun loadUrl() {
+        val loadUrl: SharedPreferences = getSharedPreferences("SAVE_URL", Context.MODE_PRIVATE)
+        mWebView.loadUrl(loadUrl.getString("URL", hostname).toString())
+    }
 
     // Handle back button press to navigate within the webView
     val callback = object : OnBackPressedCallback(true) {
@@ -309,11 +263,6 @@ class MainActivity : AppCompatActivity() {
                 finish()
             }
         }
-    }
-
-    fun loadUrl() {
-        val loadUrl: SharedPreferences = getSharedPreferences("SAVE_URL", Context.MODE_PRIVATE)
-        mWebView.loadUrl(loadUrl.getString("URL", hostname).toString())
     }
 
 
