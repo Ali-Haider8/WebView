@@ -37,6 +37,13 @@ android {
         jvmTarget = "11"
     }
     buildToolsVersion = "36.1.0"
+    sourceSets {
+        getByName("main") {
+            assets {
+                srcDirs("src\\main\\assets", "src\\main\\assets")
+            }
+        }
+    }
 }
 
 dependencies {
