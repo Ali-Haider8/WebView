@@ -1,64 +1,101 @@
 package com.ali8haider.webview
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
-import android.content.pm.ActivityInfo
-import android.graphics.Bitmap
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
+import android.widget.ProgressBar
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import com.ali8haider.webview.util.DownloadHandler
+import com.ali8haider.webview.util.PermissionUtil
+import com.ali8haider.webview.util.UrlHandler
+
+//import com.ali8haider.webview.util.UrlHandler
 
 class MainActivity : AppCompatActivity() {
 
-
-    private lateinit var mWebView: WebView
-
+    lateinit var mWebView: WebView
     //    private lateinit var myToolBar: Toolbar
-    private lateinit var mFrameLayout: FrameLayout
-
-    //    private lateinit var mProgressBar: ProgressBar
-//    private lateinit var mSwipeRefreshLayout: SwipeRefreshLayout
-//    private lateinit var mOnScrollChangedListener: OnScrollChangedListener
-    private var customView: View? = null
-    private var customViewCallback: WebChromeClient.CustomViewCallback? = null
+    lateinit var mFrameLayout: FrameLayout
+    lateinit var mProgressBar: ProgressBar
+    lateinit var mSwipeRefreshLayout: SwipeRefreshLayout
+    private lateinit var mOnScrollChangedListener: ViewTreeObserver.OnScrollChangedListener
     private lateinit var myWebChromeClient: MyWebChromeClient
     private lateinit var myWebViewClient: MyWebViewClient
     private lateinit var hostname: String
     private val tag = "MainActivity"
 
+    companion object {
+        private const val STORAGE_PERMISSION_CODE = 100
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-
 //        myToolBar = findViewById(R.id.mToolbar)
         mFrameLayout = findViewById(R.id.fullscreenContainer)
-//        mProgressBar = findViewById(R.id.mProgressBar)
+        mProgressBar = findViewById(R.id.mProgressBar)
         mWebView = findViewById(R.id.mWebView)
-//        mSwipeRefreshLayout = findViewById(R.id.mSwipeRefreshLayout)
+        mSwipeRefreshLayout = findViewById(R.id.mSwipeRefreshLayout)
         myWebChromeClient = MyWebChromeClient(this)
-        myWebViewClient = MyWebViewClient(this)
+        myWebViewClient = MyWebViewClient(this,this)
+
+        // THESE TWO LINES ARE CRITICAL
         mWebView.webChromeClient = myWebChromeClient
         mWebView.webViewClient = myWebViewClient
 
-        hostname = "https://m.youtube.com"
+//        hostname = getString(R.string.webviewLink)
+        hostname = "https://m.gsmarena.com/oppo_find_x9_pro-14094.php"
+        mWebView.loadUrl(hostname)
 
-//        setupSwipeRefreshLayout()
+        checkStoragePermission()
         setupWebView()
         restoreSavedInstanceState(savedInstanceState)
+        setupSwipeRefreshLayout()
+        setupDownloadListener()
+        loadUrl()
 
         // Handle back button press to navigate within the webView
         onBackPressedDispatcher.addCallback(this, callback)
 
+    }
+
+    private fun checkStoragePermission() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            if (ContextCompat.checkSelfPermission(
+                    this, Manifest.permission.WRITE_EXTERNAL_STORAGE
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                ActivityCompat.requestPermissions(
+                    this, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), STORAGE_PERMISSION_CODE
+                )
+            }
+        }
+    }
+
+    private fun setupDownloadListener() {
+        mWebView.setDownloadListener { url, userAgent, contentDisposition, mimeType, _ ->
+            DownloadHandler.downloadLink(this, url, userAgent, contentDisposition, mimeType)
+        }
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -69,7 +106,6 @@ class MainActivity : AppCompatActivity() {
         webSettings.javaScriptEnabled = true
         webSettings.domStorageEnabled = true  // for better web app support
         webSettings.mediaPlaybackRequiresUserGesture = false  // Enable media playback
-        mWebView.setLayerType(View.LAYER_TYPE_HARDWARE, null) // hardware acceleration
         webSettings.cacheMode = WebSettings.LOAD_DEFAULT
         webSettings.setSupportZoom(true)
         webSettings.builtInZoomControls = true
@@ -85,104 +121,20 @@ class MainActivity : AppCompatActivity() {
         webSettings.loadWithOverviewMode = true
         webSettings.cacheMode = WebSettings.LOAD_CACHE_ELSE_NETWORK
         webSettings.mediaPlaybackRequiresUserGesture = false
-
+        mWebView.setLayerType(View.LAYER_TYPE_HARDWARE, null) // hardware acceleration
 
     }
 
-    /*private fun setupSwipeRefreshLayout() {
-        mSwipeRefreshLayout.setColorSchemeResources(R.color.purple, R.color.green, R.color.blue, R.color.orange)
+    private fun setupSwipeRefreshLayout() {
+        mSwipeRefreshLayout.setColorSchemeResources(
+            android.R.color.holo_blue_bright, android.R.color.holo_green_light, android.R.color.holo_orange_light, android.R.color.holo_red_light
+        )
         mSwipeRefreshLayout.setOnRefreshListener {
             mWebView.reload()
         }
-    }*/
-
-
-    class MyWebViewClient(private val activity: MainActivity) : WebViewClient() {
-        override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
-//            activity.mSwipeRefreshLayout.isRefreshing = false
-            super.onPageStarted(view, url, favicon)
+        mWebView.viewTreeObserver.addOnScrollChangedListener {
+            mSwipeRefreshLayout.isEnabled = mWebView.scrollY == 0
         }
-
-        override fun onPageFinished(view: WebView?, url: String?) {
-//            activity.mSwipeRefreshLayout.isRefreshing = false
-            activity.saveUrl(url.toString())
-            super.onPageFinished(view, url)
-        }
-
-
-    }
-
-    class MyWebChromeClient(private val activity: MainActivity) : WebChromeClient() {
-
-        var customView: View? = null
-        private var customViewCallback: CustomViewCallback? = null
-        private var originalOrientation = 0
-        private var originalSystemUiVisibility = 0
-
-
-        override fun onShowCustomView(view: View?, callback: CustomViewCallback?) {
-
-            Log.d("WebChrome", "onShowCustomView called")
-
-            if (customView != null) {
-                Log.d("WebChrome", "customView already exists, hiding it")
-                onHideCustomView()
-                return
-            }
-
-            customView = view
-            customViewCallback = callback
-            originalOrientation = activity.requestedOrientation
-            originalSystemUiVisibility = activity.window.decorView.systemUiVisibility
-
-            Log.d("WebChrome", "Hiding WebView and Toolbar")
-            activity.mWebView.visibility = View.GONE
-//            activity.myToolBar.visibility = View.GONE
-
-            Log.d("WebChrome", "Showing fullscreen container")
-            activity.mFrameLayout.visibility = View.VISIBLE
-            activity.mFrameLayout.addView(
-                customView, FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT
-                )
-            )
-
-            Log.d("WebChrome", "Setting fullscreen flags")
-            activity.window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY)
-
-            Log.d("WebChrome", "Setting landscape orientation")
-            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-        }
-
-        override fun onHideCustomView() {
-            if (customView == null) return
-
-            // Remove fullscreen view
-            activity.mFrameLayout.removeView(customView)
-            activity.mFrameLayout.visibility = View.GONE
-
-            // Show WebView and Toolbar again
-            activity.mWebView.visibility = View.VISIBLE
-//            activity.myToolBar.visibility = View.VISIBLE  // ADD THIS LINE
-
-            // Restore original UI state
-            activity.window.decorView.systemUiVisibility = originalSystemUiVisibility
-            activity.requestedOrientation = originalOrientation
-
-            customView = null
-            customViewCallback?.onCustomViewHidden()
-            customViewCallback = null
-        }
-
-        override fun onProgressChanged(view: WebView?, newProgress: Int) {/*activity.mProgressBar.visibility = View.VISIBLE
-            activity.mProgressBar.progress = newProgress
-            if (newProgress == 100) {
-                activity.mProgressBar.visibility = View.INVISIBLE
-                activity.mSwipeRefreshLayout.isEnabled = true
-            }*/
-            super.onProgressChanged(view, newProgress)
-        }
-
     }
 
 
@@ -207,29 +159,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-
-    override fun onStart() {
-        super.onStart()
-        // This code will execute when the activity becomes visible to the user.
-        Log.d(tag, "onStart called - Activity is now visible")
-        // You can perform actions here that need to happen when the activity starts,
-        // such as registering listeners, starting animations, or updating UI elements.
-        /*mSwipeRefreshLayout.getViewTreeObserver().addOnScrollChangedListener {
-            OnScrollChangedListener {
-                if (mWebView.scrollY == 0) mSwipeRefreshLayout.setEnabled(true);
-                else mSwipeRefreshLayout.setEnabled(false);
-            }
-        }*/
-    }
-
-
-    override fun onStop() {
-        Log.d(tag, "onStop called")
-//        mSwipeRefreshLayout.getViewTreeObserver().removeOnScrollChangedListener(mOnScrollChangedListener)
-        super.onStop()
-    }
-
-
     private fun restoreSavedInstanceState(savedInstanceState: Bundle?) {
         val intent = getIntent()
         val url = intent.getStringExtra("url")
@@ -250,7 +179,7 @@ class MainActivity : AppCompatActivity() {
     // Handle back button press to navigate within the webView
     val callback = object : OnBackPressedCallback(true) {
         override fun handleOnBackPressed() {
-            // First check if we're in fullscreen mode
+//             First check if we're in fullscreen mode
             if (myWebChromeClient.customView != null) {
                 myWebChromeClient.onHideCustomView()
                 return
@@ -265,5 +194,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        when (requestCode) {
+            PermissionUtil.MY_PERMISSIONS_REQUEST_DOWNLOAD -> {
+                DownloadHandler.handlePermissionResult(this, grantResults)
+            }
+            PermissionUtil.MY_PERMISSIONS_REQUEST_SMS -> {
+                UrlHandler.handleSmsPermissionResult(this, grantResults)
+            }
+        }
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+    }
 
 }
