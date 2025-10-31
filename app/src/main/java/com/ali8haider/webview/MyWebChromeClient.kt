@@ -1,18 +1,14 @@
 package com.ali8haider.webview
-import android.content.Intent
 import android.content.pm.ActivityInfo
-import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Message
 import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebChromeClient
-import android.webkit.WebResourceRequest
 import android.webkit.WebView
-import android.webkit.WebViewClient
 import android.widget.FrameLayout
 
+@Suppress("DEPRECATION")
 class MyWebChromeClient(private val activity: MainActivity) : WebChromeClient() {
 
     var customView: View? = null

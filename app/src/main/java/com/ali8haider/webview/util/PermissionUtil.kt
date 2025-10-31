@@ -42,17 +42,15 @@ object PermissionUtil {
      */
     fun requestPermission(activity: Activity, permission: String, permissionNumber: Int) {
         // Request permission only if needed
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            // Skip request for Android 10+ when requesting storage permission
-            if (permission == android.Manifest.permission.WRITE_EXTERNAL_STORAGE &&
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
-            ) {
-                return
-            }
-
-            // And finally ask for the permission
-            ActivityCompat.requestPermissions(activity, arrayOf(permission), permissionNumber)
+        // Skip request for Android 10+ when requesting storage permission
+        if (permission == android.Manifest.permission.WRITE_EXTERNAL_STORAGE &&
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+        ) {
+            return
         }
+
+        // And finally ask for the permission
+        ActivityCompat.requestPermissions(activity, arrayOf(permission), permissionNumber)
     }
 
     /**
@@ -61,23 +59,12 @@ object PermissionUtil {
      * @param grantResults Permission grant results
      * @param permissionName Name of permission for user-friendly message
      */
-    fun handlePermissionResult(
-        activity: Activity,
-        grantResults: IntArray,
-        permissionName: String
-    ) {
+    @Suppress("unused")
+    fun handlePermissionResult(activity: Activity, grantResults: IntArray, permissionName: String) {
         if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            Toast.makeText(
-                activity,
-                "$permissionName permission granted",
-                Toast.LENGTH_SHORT
-            ).show()
+            Toast.makeText(activity, "$permissionName permission granted", Toast.LENGTH_SHORT).show()
         } else {
-            Toast.makeText(
-                activity,
-                "$permissionName permission denied",
-                Toast.LENGTH_LONG
-            ).show()
+            Toast.makeText(activity, "$permissionName permission denied", Toast.LENGTH_LONG).show()
         }
     }
 }

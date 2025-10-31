@@ -3,20 +3,13 @@ package com.ali8haider.webview
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.view.View
-import android.view.ViewTreeObserver
-import android.webkit.WebChromeClient
-import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
-import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import android.widget.ProgressBar
 import androidx.activity.OnBackPressedCallback
@@ -28,20 +21,17 @@ import com.ali8haider.webview.util.DownloadHandler
 import com.ali8haider.webview.util.PermissionUtil
 import com.ali8haider.webview.util.UrlHandler
 
-//import com.ali8haider.webview.util.UrlHandler
-
 class MainActivity : AppCompatActivity() {
 
     lateinit var mWebView: WebView
+
     //    private lateinit var myToolBar: Toolbar
     lateinit var mFrameLayout: FrameLayout
     lateinit var mProgressBar: ProgressBar
     lateinit var mSwipeRefreshLayout: SwipeRefreshLayout
-    private lateinit var mOnScrollChangedListener: ViewTreeObserver.OnScrollChangedListener
     private lateinit var myWebChromeClient: MyWebChromeClient
     private lateinit var myWebViewClient: MyWebViewClient
     private lateinit var hostname: String
-    private val tag = "MainActivity"
 
     companion object {
         private const val STORAGE_PERMISSION_CODE = 100
@@ -57,7 +47,7 @@ class MainActivity : AppCompatActivity() {
         mWebView = findViewById(R.id.mWebView)
         mSwipeRefreshLayout = findViewById(R.id.mSwipeRefreshLayout)
         myWebChromeClient = MyWebChromeClient(this)
-        myWebViewClient = MyWebViewClient(this,this)
+        myWebViewClient = MyWebViewClient(this, this)
 
         // THESE TWO LINES ARE CRITICAL
         mWebView.webChromeClient = myWebChromeClient
@@ -103,6 +93,20 @@ class MainActivity : AppCompatActivity() {
 
         val webSettings: WebSettings = mWebView.settings
 
+        /*web.getSettings().setJavaScriptCanOpenWindowsAutomatically(false);
+web.getSettings().setPluginsEnabled(true);
+web.getSettings().setSupportMultipleWindows(false);
+web.getSettings().setSupportZoom(true);
+web.setVerticalScrollBarEnabled(false);
+web.setHorizontalScrollBarEnabled(false);
+web.getSettings().setBuiltInZoomControls(true);
+web.getSettings().setLoadWithOverviewMode(true);
+web.getSettings().setUseWideViewPort(true);
+web.getSettings().setAppCacheMaxSize( 5 * 1024 * 1024 ); // 5MB
+web.getSettings().setAppCachePath( getApplicationContext().getCacheDir().getAbsolutePath() );
+web.getSettings().setAllowFileAccess(true);
+web.getSettings().setAppCacheEnabled(true);*/
+
         webSettings.javaScriptEnabled = true
         webSettings.domStorageEnabled = true  // for better web app support
         webSettings.mediaPlaybackRequiresUserGesture = false  // Enable media playback
@@ -113,7 +117,7 @@ class MainActivity : AppCompatActivity() {
         webSettings.userAgentString = mWebView.settings.userAgentString // for better compatibility
         webSettings.allowFileAccess = true // Allow file access
         webSettings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW // Allow mixed content
-        webSettings.useWideViewPort = true;
+        webSettings.useWideViewPort = true
         webSettings.layoutAlgorithm = WebSettings.LayoutAlgorithm.NORMAL
         webSettings.javaScriptCanOpenWindowsAutomatically = true
         webSettings.setSupportMultipleWindows(true)
@@ -164,10 +168,10 @@ class MainActivity : AppCompatActivity() {
         val url = intent.getStringExtra("url")
 
         if (savedInstanceState != null) {
-            mWebView.restoreState(savedInstanceState);
+            mWebView.restoreState(savedInstanceState)
         } else {
-            if (url != null) mWebView.loadUrl(hostname);
-            else loadUrl();
+            if (url != null) mWebView.loadUrl(hostname)
+            else loadUrl()
         }
     }
 
@@ -199,6 +203,7 @@ class MainActivity : AppCompatActivity() {
             PermissionUtil.MY_PERMISSIONS_REQUEST_DOWNLOAD -> {
                 DownloadHandler.handlePermissionResult(this, grantResults)
             }
+
             PermissionUtil.MY_PERMISSIONS_REQUEST_SMS -> {
                 UrlHandler.handleSmsPermissionResult(this, grantResults)
             }

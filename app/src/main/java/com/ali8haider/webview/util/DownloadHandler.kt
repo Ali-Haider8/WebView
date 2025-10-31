@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package com.ali8haider.webview.util
 
 import android.Manifest
@@ -13,6 +15,7 @@ import android.webkit.URLUtil
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 
 object DownloadHandler {
 
@@ -65,14 +68,8 @@ object DownloadHandler {
      * Request storage permission
      */
     private fun requestPermission(activity: Activity) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
-            Build.VERSION.SDK_INT < Build.VERSION_CODES.Q
-        ) {
-            ActivityCompat.requestPermissions(
-                activity,
-                arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
-                DOWNLOAD_PERMISSION_CODE
-            )
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            ActivityCompat.requestPermissions(activity, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), DOWNLOAD_PERMISSION_CODE)
         }
     }
 
@@ -114,7 +111,7 @@ object DownloadHandler {
             val filename = URLUtil.guessFileName(url, contentDisposition, mimeType)
 
             // Create download request
-            val request = DownloadManager.Request(Uri.parse(url)).apply {
+            val request = DownloadManager.Request(url.toUri()).apply {
                 setMimeType(mimeType)
                 addRequestHeader("User-Agent", userAgent)
 
@@ -141,11 +138,7 @@ object DownloadHandler {
             Toast.makeText(activity, "Downloading: $filename", Toast.LENGTH_SHORT).show()
 
         } catch (e: Exception) {
-            Toast.makeText(
-                activity,
-                "Download failed: ${e.message}",
-                Toast.LENGTH_LONG
-            ).show()
+            Toast.makeText(activity, "Download failed: ${e.message}", Toast.LENGTH_LONG).show()
             e.printStackTrace()
         }
     }
