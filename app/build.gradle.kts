@@ -55,6 +55,7 @@ dependencies {
     implementation(libs.androidx.swiperefreshlayout)
     implementation(libs.google.material)
     implementation(libs.coordinatorlayout)
+    implementation(libs.androidx.drawerlayout)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

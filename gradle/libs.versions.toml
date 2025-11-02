@@ -10,7 +10,8 @@ material = "1.13.0"
 activity = "1.11.0"
 constraintlayout = "2.2.1"
 swiperefreshlayout = "1.2.0-beta01"
-coordinatorlayoutVersion = "1.2.0"
+coordinatorlayoutVersion = "1.3.0"
+drawerlayout = "1.2.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -24,6 +25,7 @@ androidx-constraintlayout = { group = "androidx.constraintlayout", name = "const
 androidx-swiperefreshlayout = { group = "androidx.swiperefreshlayout", name = "swiperefreshlayout", version.ref = "swiperefreshlayout" }
 google-material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 coordinatorlayout = { group = "androidx.coordinatorlayout", name = "coordinatorlayout", version.ref = "coordinatorlayoutVersion" }
+androidx-drawerlayout = { group = "androidx.drawerlayout", name = "drawerlayout", version.ref = "drawerlayout" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

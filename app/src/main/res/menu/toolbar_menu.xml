@@ -1,13 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_search"
+        android:icon="@drawable/ic_search"
+        android:title="Search"
+        app:actionViewClass="androidx.appcompat.widget.SearchView"
+        app:showAsAction="ifRoom|collapseActionView" />
+    <item
+        android:id="@+id/action_home"
+        android:title="@string/home"
+        app:showAsAction="never" />
 
     <item
         android:id="@+id/action_refresh"
-        android:title="Refresh"
-        app:showAsAction="never"/>
+        android:title="@string/refresh"
+        app:showAsAction="never" />
     <item
         android:id="@+id/action_share"
-        android:title="Share"
-        app:showAsAction="never"/>
+        android:title="@string/share"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_exit"
+        android:icon="@android:drawable/ic_notification_clear_all"
+        android:title="Exit"
+        app:showAsAction="never" />
 </menu>

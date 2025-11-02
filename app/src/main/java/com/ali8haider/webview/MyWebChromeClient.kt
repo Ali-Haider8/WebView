@@ -1,4 +1,5 @@
 package com.ali8haider.webview
+
 import android.content.pm.ActivityInfo
 import android.os.Message
 import android.util.Log
@@ -83,7 +84,8 @@ class MyWebChromeClient(private val activity: MainActivity) : WebChromeClient() 
             activity.mProgressBar.visibility = View.VISIBLE
             activity.mProgressBar.progress = newProgress
         } else {
-            activity.mProgressBar.visibility = View.INVISIBLE
+//            activity.mProgressBar.visibility = View.INVISIBLE
+            activity.mProgressBar.progress = 0
         }
     }
 
@@ -98,6 +100,11 @@ class MyWebChromeClient(private val activity: MainActivity) : WebChromeClient() 
         resultMsg.sendToTarget()
 
         return true
+    }
+
+    override fun onReceivedTitle(view: WebView?, title: String?) {
+        activity.supportActionBar?.subtitle = title.toString()
+        super.onReceivedTitle(view, title)
     }
 
 

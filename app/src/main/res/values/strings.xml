@@ -3,4 +3,10 @@
     <string name="youtube">https://www.youtube.com/</string>
     <string name="google">https://www.google.com</string>
     <string name="gsmarena">https://m.gsmarena.com/oppo_find_x9_pro-14094.php</string>
+    <string name="refresh">Refresh</string>
+    <string name="share">Share</string>
+    <string name="home">Home</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="nav_header_desc">Navigation header</string>
 </resources>

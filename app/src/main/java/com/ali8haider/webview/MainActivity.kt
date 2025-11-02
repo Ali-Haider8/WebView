@@ -3,7 +3,6 @@ package com.ali8haider.webview
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -14,27 +13,37 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import android.widget.FrameLayout
 import android.widget.ProgressBar
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
+import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SearchView
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
+import androidx.core.view.GravityCompat
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.ali8haider.webview.util.DownloadHandler
 import com.ali8haider.webview.util.PermissionUtil
 import com.ali8haider.webview.util.UrlHandler
+import com.google.android.material.navigation.NavigationView
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
     lateinit var mWebView: WebView
 
     lateinit var mFrameLayout: FrameLayout
     lateinit var mProgressBar: ProgressBar
     lateinit var mToolbar: Toolbar
+    private lateinit var drawerLayout: DrawerLayout
+    private lateinit var navigationView: NavigationView
     lateinit var mSwipeRefreshLayout: SwipeRefreshLayout
     private lateinit var myWebChromeClient: MyWebChromeClient
     private lateinit var myWebViewClient: MyWebViewClient
     private lateinit var hostname: String
+    private var searchView: SearchView? = null
     private var isFirstLoad = true // Flag to track first load
 
     companion object {
@@ -48,21 +57,9 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        mToolbar = findViewById(R.id.mToolBar)
-        mFrameLayout = findViewById(R.id.fullscreenContainer)
-        mProgressBar = findViewById(R.id.mProgressBar)
-        mWebView = findViewById(R.id.mWebView)
-        mSwipeRefreshLayout = findViewById(R.id.mSwipeRefreshLayout)
-        myWebChromeClient = MyWebChromeClient(this)
-        myWebViewClient = MyWebViewClient(this, this)
+        initializeViews()
 
-        // THESE TWO LINES ARE CRITICAL
-        mWebView.webChromeClient = myWebChromeClient
-        mWebView.webViewClient = myWebViewClient
-
-//        hostname = getString(R.string.google)
         hostname = getSavedHomePage() ?: getString(R.string.google)
-//        mWebView.loadUrl(hostname)
 
         setActionBar()
         checkStoragePermission()
@@ -70,17 +67,65 @@ class MainActivity : AppCompatActivity() {
         restoreSavedInstanceState(savedInstanceState)
         setupSwipeRefreshLayout()
         setupDownloadListener()
-//        loadUrl()
+
+        // Setup Hamburger Icon
+        val toggle = ActionBarDrawerToggle(
+            this, drawerLayout, mToolbar,
+            R.string.navigation_drawer_open,
+            R.string.navigation_drawer_close
+        )
+        drawerLayout.addDrawerListener(toggle)
+        toggle.syncState()
 
         // Handle back button press to navigate within the webView
         onBackPressedDispatcher.addCallback(this, callback)
 
     }
 
+    private fun initializeViews() {
+        mToolbar = findViewById(R.id.mToolbar)
+        drawerLayout = findViewById(R.id.drawer_layout)
+        navigationView = findViewById(R.id.nav_view)
+        mFrameLayout = findViewById(R.id.fullscreenContainer)
+        mProgressBar = findViewById(R.id.mProgressBar)
+        mWebView = findViewById(R.id.mWebView)
+        mSwipeRefreshLayout = findViewById(R.id.mSwipeRefreshLayout)
+
+        navigationView.setNavigationItemSelectedListener(this)
+        myWebChromeClient = MyWebChromeClient(this)
+        myWebViewClient = MyWebViewClient(this, this)
+        // Set WebView clients
+        mWebView.webChromeClient = myWebChromeClient
+        mWebView.webViewClient = myWebViewClient
+    }
+
+    override fun onNavigationItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.nav_menu1_option1 -> {
+                Toast.makeText(this, "Menu 1 - Option 1 Selected", Toast.LENGTH_SHORT).show()
+            }
+
+            R.id.nav_menu1_option2 -> {
+                Toast.makeText(this, "Menu 1 - Option 2 Selected", Toast.LENGTH_SHORT).show()
+            }
+
+            R.id.nav_menu2_option1 -> {
+                Toast.makeText(this, "Menu 2 - Option 1 Selected", Toast.LENGTH_SHORT).show()
+            }
+
+            R.id.nav_menu2_option2 -> {
+                Toast.makeText(this, "Menu 2 - Option 2 Selected", Toast.LENGTH_SHORT).show()
+            }
+        }
+        drawerLayout.closeDrawer(GravityCompat.START)
+        return true
+    }
+
     @Suppress("unused")
     fun restHomePage() {
         val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.edit().remove(KEY_HOMEPAGE).apply()
+        prefs.edit { remove(KEY_HOMEPAGE) }
+        mWebView.loadUrl(getString(R.string.google))
         isFirstLoad = true
     }
 
@@ -100,7 +145,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun saveHomePage(url: String) {
         val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.edit().putString(KEY_HOMEPAGE, url).apply()
+        prefs.edit { putString(KEY_HOMEPAGE, url) }
     }
 
     /*
@@ -122,10 +167,9 @@ class MainActivity : AppCompatActivity() {
             hostname = url
             saveHomePage(url)
             isFirstLoad = false
-
             // Update home button immediately
         }
-        updateHomeButton(url)
+//        updateHomeButton(url)
     }
 
     private fun setActionBar() {
@@ -137,21 +181,62 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun updateHomeButton(url: String?) {
-        val isHomePage = url == hostname
-        supportActionBar?.setDisplayHomeAsUpEnabled(!isHomePage)
-        supportActionBar?.setHomeButtonEnabled(!isHomePage)
-    }
+//    fun updateHomeButton(url: String?) {
+//        val isHomePage = url == hostname
+//        supportActionBar?.setDisplayHomeAsUpEnabled(!isHomePage)
+//        supportActionBar?.setHomeButtonEnabled(!isHomePage)
+//    }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.toolbar_menu, menu)
+
+        val searchItem = menu?.findItem(R.id.action_search)
+        searchView = searchItem?.actionView as? SearchView
+
+        searchView?.apply {
+            queryHint = "Enter URL or search..."
+            maxWidth = Integer.MAX_VALUE
+
+            setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+                override fun onQueryTextSubmit(query: String?): Boolean {
+                    query?.let {
+                        loadUrl(it)
+                    }
+                    searchView?.clearFocus()
+                    menu?.findItem(R.id.action_search)?.collapseActionView()
+                    return true
+                }
+
+                override fun onQueryTextChange(newText: String?): Boolean {
+                    return false
+                }
+            })
+        }
+
         return true
+    }
+
+    private fun loadUrl(query: String) {
+        val url = if (query.startsWith("http://") || query.startsWith("https://")) {
+            query
+        } else if (query.contains(".")) {
+            "https://$query"
+        } else {
+            "https://www.google.com/search?q=$query"
+        }
+        mWebView.loadUrl(url)
+        Toast.makeText(this, "Loading: $url", Toast.LENGTH_SHORT).show()
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             android.R.id.home -> {
-                mWebView.loadUrl(hostname)
+                onBackPressedDispatcher.onBackPressed()
+                true
+            }
+
+            R.id.action_home -> {
+                restHomePage()
                 true
             }
 
@@ -162,6 +247,11 @@ class MainActivity : AppCompatActivity() {
 
             R.id.action_share -> {
                 shareCurrentPage()
+                true
+            }
+
+            R.id.action_exit -> {
+                finish()
                 true
             }
 
@@ -252,7 +342,7 @@ class MainActivity : AppCompatActivity() {
     fun saveUrl(url: String) {
         if (!url.contains("No Internet") && !url.startsWith("file:///android_asset/")) {
             val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            prefs.edit().putString(KEY_LAST_URL, url).apply()
+            prefs.edit { putString(KEY_LAST_URL, url) }
         }
     }
 
@@ -267,25 +357,29 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun loadUrl() {
-        val loadUrl: SharedPreferences = getSharedPreferences("SAVE_URL", Context.MODE_PRIVATE)
-        mWebView.loadUrl(loadUrl.getString("URL", hostname).toString())
-    }
-
     // Handle back button press to navigate within the webView
     val callback = object : OnBackPressedCallback(true) {
         override fun handleOnBackPressed() {
-//             First check if we're in fullscreen mode
-            if (myWebChromeClient.customView != null) {
-                myWebChromeClient.onHideCustomView()
-                return
-            }
+            when {
+                searchView?.isIconified == false -> {
+                    searchView?.isIconified = true
+                }
 
-            // Then check WebView navigation
-            if (mWebView.canGoBack()) {
-                mWebView.goBack()
-            } else {
-                finish()
+                drawerLayout.isDrawerOpen(GravityCompat.START) -> {
+                    drawerLayout.closeDrawer(GravityCompat.START)
+                }
+
+                myWebChromeClient.customView != null -> {
+                    myWebChromeClient.onHideCustomView()
+                }
+
+                mWebView.canGoBack() -> {
+                    mWebView.goBack()
+                }
+
+                else -> {
+                    finish()
+                }
             }
         }
     }
