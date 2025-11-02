@@ -1,33 +1,6 @@
 <resources>
     <string name="app_name">WebView</string>
-    <string name="search">بحث</string>
-    <string name="share_page_hint">إضغط مطولاً على زر القائمة الجانبية لمشاركة الصفحة</string>
-    <string name="chooser_text">أختر التطبيق</string>
-    <string name="chooser2_text">مشاركة الصفحة بأستخدام</string>
-    <string name="share_text1">حمل تطبيق</string>
-    <string name="share_text2">لأجهزة الاندرويد من خلال الرابط :- </string>
-    <string name="connection_failed">فشل الاتصال</string>
-    <string name="check_internet">تأكد من انك متصل بالانترنت</string>
-    <string name="close">إغلاق</string>
-    <string name="support_us">إدعمنا</string>
-    <string name="share_app">مشاركة التطبيق</string>
-    <string name="rate_app">تقيم التطبيق</string>
-    <string name="home">الصفحة الرئيسية</string>
-    <string name="about_app">حول التطبيق</string>
-    <string name="cannot_open_file_chooser">تعذر فتح منتقي الملفات</string>
-    <string name="failed_to_upload_image">فشل  رفع الصورة</string>
-    <string name="downloading">جاري تحميل الملف</string>
-    <string name="about_text">موقع تعليمي كويتي يهدف لخدمة الطالب والمعلم</string>
-    <string name="request_permissions">طلب الاذونات</string>
-    <string name="the_app_requires_some_permissions_to_work">يتطلب التطبيق بعض الاذونات لكي يعمل</string>
-    <string name="follow_facebook">تابعنا على فيسبوك</string>
-    <string name="contact_telegram">تواصل على تيليجرام</string>
-
-    <string name="app_unit_id">ca-app-pub-4224948385649225~3733908642</string>
-    <string name="banner_ad_unit_id">ca-app-pub-4224948385649225/9220725961</string>
-    <string name="interstitial_ad_unit_id">ca-app-pub-4224948385649225/6838105207</string>
-    <string name="test_device_id">F8702296A4D59A33DE02AE66608A565A</string>
-    <string name="default_notification_channel_id">fcm_default_channel</string>
-    <string name="host_name">https://www.youtube.com/</string>
-    <string name="webviewLink">https://www.google.com</string>
+    <string name="youtube">https://www.youtube.com/</string>
+    <string name="google">https://www.google.com</string>
+    <string name="gsmarena">https://m.gsmarena.com/oppo_find_x9_pro-14094.php</string>
 </resources>
