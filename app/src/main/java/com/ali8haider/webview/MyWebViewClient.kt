@@ -28,13 +28,17 @@ class MyWebViewClient(
     }
 
     override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
-        activity.mSwipeRefreshLayout.isRefreshing = true
+//        activity.mSwipeRefreshLayout.isRefreshing = true
         super.onPageStarted(view, url, favicon)
     }
 
     override fun onPageFinished(view: WebView?, url: String?) {
         activity.mSwipeRefreshLayout.isRefreshing = false
         activity.saveUrl(url.toString())
+
+        // set homepage from first load AND update home button
+        activity.setHomepageFromFirstLoad(url)
+
         super.onPageFinished(view, url)
     }
 }

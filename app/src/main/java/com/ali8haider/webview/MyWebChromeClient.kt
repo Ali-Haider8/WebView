@@ -83,7 +83,7 @@ class MyWebChromeClient(private val activity: MainActivity) : WebChromeClient() 
             activity.mProgressBar.visibility = View.VISIBLE
             activity.mProgressBar.progress = newProgress
         } else {
-            activity.mProgressBar.visibility = View.GONE
+            activity.mProgressBar.visibility = View.INVISIBLE
         }
     }
 

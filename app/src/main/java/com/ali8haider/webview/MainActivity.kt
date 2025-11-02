@@ -7,6 +7,8 @@ import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.webkit.WebSettings
 import android.webkit.WebView
@@ -14,6 +16,7 @@ import android.widget.FrameLayout
 import android.widget.ProgressBar
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -25,23 +28,27 @@ class MainActivity : AppCompatActivity() {
 
     lateinit var mWebView: WebView
 
-    //    private lateinit var myToolBar: Toolbar
     lateinit var mFrameLayout: FrameLayout
     lateinit var mProgressBar: ProgressBar
+    lateinit var mToolbar: Toolbar
     lateinit var mSwipeRefreshLayout: SwipeRefreshLayout
     private lateinit var myWebChromeClient: MyWebChromeClient
     private lateinit var myWebViewClient: MyWebViewClient
     private lateinit var hostname: String
+    private var isFirstLoad = true // Flag to track first load
 
     companion object {
         private const val STORAGE_PERMISSION_CODE = 100
+        private const val PREFS_NAME = "WebViewPrefs"
+        private const val KEY_HOMEPAGE = "homepage_url"
+        private const val KEY_LAST_URL = "last_url"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-//        myToolBar = findViewById(R.id.mToolbar)
+        mToolbar = findViewById(R.id.mToolBar)
         mFrameLayout = findViewById(R.id.fullscreenContainer)
         mProgressBar = findViewById(R.id.mProgressBar)
         mWebView = findViewById(R.id.mWebView)
@@ -53,20 +60,122 @@ class MainActivity : AppCompatActivity() {
         mWebView.webChromeClient = myWebChromeClient
         mWebView.webViewClient = myWebViewClient
 
-//        hostname = getString(R.string.webviewLink)
-        hostname = "https://m.gsmarena.com/oppo_find_x9_pro-14094.php"
-        mWebView.loadUrl(hostname)
+//        hostname = getString(R.string.google)
+        hostname = getSavedHomePage() ?: getString(R.string.google)
+//        mWebView.loadUrl(hostname)
 
+        setActionBar()
         checkStoragePermission()
         setupWebView()
         restoreSavedInstanceState(savedInstanceState)
         setupSwipeRefreshLayout()
         setupDownloadListener()
-        loadUrl()
+//        loadUrl()
 
         // Handle back button press to navigate within the webView
         onBackPressedDispatcher.addCallback(this, callback)
 
+    }
+
+    @Suppress("unused")
+    fun restHomePage() {
+        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().remove(KEY_HOMEPAGE).apply()
+        isFirstLoad = true
+    }
+
+    /*
+        Get Save homepage URL from SharedPreferences
+    */
+
+    private fun getSavedHomePage(): String? {
+        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getString(KEY_HOMEPAGE, null)
+
+    }
+
+    /*
+    * Save hompage URL to SharedPreferences
+    * */
+
+    private fun saveHomePage(url: String) {
+        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putString(KEY_HOMEPAGE, url).apply()
+    }
+
+    /*
+    * Get Last loaded URL from SharedPreferences
+    * */
+
+    private fun getLastUrl(): String? {
+        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getString(KEY_LAST_URL, null)
+    }
+
+    /*
+    * Set The homepage based on the First  URL Loaded
+    * Call this from MyWebViewClient.onPageFinished()
+    * */
+
+    fun setHomepageFromFirstLoad(url: String?) {
+        if (isFirstLoad && url != null && !url.contains("No Internet") && !url.startsWith("file:///android_asset/")) {
+            hostname = url
+            saveHomePage(url)
+            isFirstLoad = false
+
+            // Update home button immediately
+        }
+        updateHomeButton(url)
+    }
+
+    private fun setActionBar() {
+        setSupportActionBar(mToolbar)
+        supportActionBar?.apply {
+            title = getString(R.string.app_name)
+            setDisplayHomeAsUpEnabled(true)
+            setDisplayShowCustomEnabled(true)
+        }
+    }
+
+    fun updateHomeButton(url: String?) {
+        val isHomePage = url == hostname
+        supportActionBar?.setDisplayHomeAsUpEnabled(!isHomePage)
+        supportActionBar?.setHomeButtonEnabled(!isHomePage)
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.toolbar_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            android.R.id.home -> {
+                mWebView.loadUrl(hostname)
+                true
+            }
+
+            R.id.action_refresh -> {
+                mWebView.reload()
+                true
+            }
+
+            R.id.action_share -> {
+                shareCurrentPage()
+                true
+            }
+
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun shareCurrentPage() {
+        val shareIntent = android.content.Intent().apply {
+            action = android.content.Intent.ACTION_SEND
+            putExtra(android.content.Intent.EXTRA_TEXT, mWebView.url)
+            type = "text/plain"
+        }
+        startActivity(android.content.Intent.createChooser(shareIntent, "Share via"))
     }
 
     private fun checkStoragePermission() {
@@ -92,20 +201,6 @@ class MainActivity : AppCompatActivity() {
     private fun setupWebView() {
 
         val webSettings: WebSettings = mWebView.settings
-
-        /*web.getSettings().setJavaScriptCanOpenWindowsAutomatically(false);
-web.getSettings().setPluginsEnabled(true);
-web.getSettings().setSupportMultipleWindows(false);
-web.getSettings().setSupportZoom(true);
-web.setVerticalScrollBarEnabled(false);
-web.setHorizontalScrollBarEnabled(false);
-web.getSettings().setBuiltInZoomControls(true);
-web.getSettings().setLoadWithOverviewMode(true);
-web.getSettings().setUseWideViewPort(true);
-web.getSettings().setAppCacheMaxSize( 5 * 1024 * 1024 ); // 5MB
-web.getSettings().setAppCachePath( getApplicationContext().getCacheDir().getAbsolutePath() );
-web.getSettings().setAllowFileAccess(true);
-web.getSettings().setAppCacheEnabled(true);*/
 
         webSettings.javaScriptEnabled = true
         webSettings.domStorageEnabled = true  // for better web app support
@@ -148,30 +243,27 @@ web.getSettings().setAppCacheEnabled(true);*/
     }
 
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
-        mWebView.restoreState(savedInstanceState)
         super.onRestoreInstanceState(savedInstanceState)
+        mWebView.restoreState(savedInstanceState)
+        isFirstLoad = false
     }
 
 
     fun saveUrl(url: String) {
         if (!url.contains("No Internet") && !url.startsWith("file:///android_asset/")) {
-            val sharedPreferences: SharedPreferences = getSharedPreferences("url", MODE_PRIVATE)
-            sharedPreferences.edit().also {
-                it.putString("url", url)
-                it.apply()
-            }
+            val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            prefs.edit().putString(KEY_LAST_URL, url).apply()
         }
     }
 
     private fun restoreSavedInstanceState(savedInstanceState: Bundle?) {
-        val intent = getIntent()
-        val url = intent.getStringExtra("url")
-
         if (savedInstanceState != null) {
             mWebView.restoreState(savedInstanceState)
+            isFirstLoad = false
         } else {
-            if (url != null) mWebView.loadUrl(hostname)
-            else loadUrl()
+            val lastUrl = getLastUrl()
+            if (lastUrl != null) mWebView.loadUrl(lastUrl)
+            else mWebView.loadUrl(hostname)
         }
     }
 
