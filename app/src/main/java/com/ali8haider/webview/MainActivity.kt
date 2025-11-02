@@ -33,13 +33,12 @@ import com.google.android.material.navigation.NavigationView
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
     lateinit var mWebView: WebView
-
     lateinit var mFrameLayout: FrameLayout
     lateinit var mProgressBar: ProgressBar
-    lateinit var mToolbar: Toolbar
-    private lateinit var drawerLayout: DrawerLayout
-    private lateinit var navigationView: NavigationView
+    private lateinit var mToolbar: Toolbar
     lateinit var mSwipeRefreshLayout: SwipeRefreshLayout
+    private lateinit var mDrawerLayout: DrawerLayout
+    private lateinit var navigationView: NavigationView
     private lateinit var myWebChromeClient: MyWebChromeClient
     private lateinit var myWebViewClient: MyWebViewClient
     private lateinit var hostname: String
@@ -57,76 +56,89 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        initializeViews()
-
         hostname = getSavedHomePage() ?: getString(R.string.google)
 
+        initializeViews()
         setActionBar()
         checkStoragePermission()
         setupWebView()
         restoreSavedInstanceState(savedInstanceState)
         setupSwipeRefreshLayout()
         setupDownloadListener()
-
-        // Setup Hamburger Icon
-        val toggle = ActionBarDrawerToggle(
-            this, drawerLayout, mToolbar,
-            R.string.navigation_drawer_open,
-            R.string.navigation_drawer_close
-        )
-        drawerLayout.addDrawerListener(toggle)
-        toggle.syncState()
-
-        // Handle back button press to navigate within the webView
-        onBackPressedDispatcher.addCallback(this, callback)
-
+        setupNavigationDrawer()
+        setupBackPressHandler()
     }
 
     private fun initializeViews() {
         mToolbar = findViewById(R.id.mToolbar)
-        drawerLayout = findViewById(R.id.drawer_layout)
+        mDrawerLayout = findViewById(R.id.drawer_layout)
         navigationView = findViewById(R.id.nav_view)
         mFrameLayout = findViewById(R.id.fullscreenContainer)
         mProgressBar = findViewById(R.id.mProgressBar)
         mWebView = findViewById(R.id.mWebView)
         mSwipeRefreshLayout = findViewById(R.id.mSwipeRefreshLayout)
 
-        navigationView.setNavigationItemSelectedListener(this)
+        // Initialize clients HERE
         myWebChromeClient = MyWebChromeClient(this)
         myWebViewClient = MyWebViewClient(this, this)
+
         // Set WebView clients
         mWebView.webChromeClient = myWebChromeClient
         mWebView.webViewClient = myWebViewClient
     }
 
+    private fun setupBackPressHandler() {
+        onBackPressedDispatcher.addCallback(this, backPressCallback)
+    }
+
+    private fun setupNavigationDrawer() {
+        navigationView.setNavigationItemSelectedListener(this)
+
+        val toggle = ActionBarDrawerToggle(
+            this, mDrawerLayout, mToolbar,
+            R.string.navigation_drawer_open,
+            R.string.navigation_drawer_close
+        )
+        mDrawerLayout.addDrawerListener(toggle)
+        toggle.syncState()
+    }
+
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
-        when (item.itemId) {
-            R.id.nav_menu1_option1 -> {
-                Toast.makeText(this, "Menu 1 - Option 1 Selected", Toast.LENGTH_SHORT).show()
-            }
-
-            R.id.nav_menu1_option2 -> {
-                Toast.makeText(this, "Menu 1 - Option 2 Selected", Toast.LENGTH_SHORT).show()
-            }
-
-            R.id.nav_menu2_option1 -> {
-                Toast.makeText(this, "Menu 2 - Option 1 Selected", Toast.LENGTH_SHORT).show()
-            }
-
-            R.id.nav_menu2_option2 -> {
-                Toast.makeText(this, "Menu 2 - Option 2 Selected", Toast.LENGTH_SHORT).show()
-            }
+        val message = when (item.itemId) {
+            R.id.nav_menu1_option1 -> "Menu 1 - Option 1 Selected"
+            R.id.nav_menu1_option2 -> "Menu 1 - Option 2 Selected"
+            R.id.nav_menu2_option1 -> "Menu 2 - Option 1 Selected"
+            R.id.nav_menu2_option2 -> "Menu 2 - Option 2 Selected"
+            else -> return false
         }
-        drawerLayout.closeDrawer(GravityCompat.START)
+
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+        mDrawerLayout.closeDrawer(GravityCompat.START)
         return true
     }
 
-    @Suppress("unused")
-    fun restHomePage() {
-        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.edit { remove(KEY_HOMEPAGE) }
+    fun resetHomePage() {
+        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit { remove(KEY_HOMEPAGE) }
         mWebView.loadUrl(getString(R.string.google))
         isFirstLoad = true
+    }
+
+    private fun saveHomePage(url: String) {
+        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit { putString(KEY_HOMEPAGE, url) }
+    }
+
+    private fun getLastUrl(): String? {
+        return getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getString(KEY_LAST_URL, null)
+    }
+
+    fun saveUrl(url: String) {
+        if (!url.contains("No Internet") && !url.startsWith("file:///android_asset/")) {
+            getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                .edit { putString(KEY_LAST_URL, url) }
+        }
     }
 
     /*
@@ -134,42 +146,16 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     */
 
     private fun getSavedHomePage(): String? {
-        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        return prefs.getString(KEY_HOMEPAGE, null)
-
+        return getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getString(KEY_HOMEPAGE, null)
     }
-
-    /*
-    * Save hompage URL to SharedPreferences
-    * */
-
-    private fun saveHomePage(url: String) {
-        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.edit { putString(KEY_HOMEPAGE, url) }
-    }
-
-    /*
-    * Get Last loaded URL from SharedPreferences
-    * */
-
-    private fun getLastUrl(): String? {
-        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        return prefs.getString(KEY_LAST_URL, null)
-    }
-
-    /*
-    * Set The homepage based on the First  URL Loaded
-    * Call this from MyWebViewClient.onPageFinished()
-    * */
 
     fun setHomepageFromFirstLoad(url: String?) {
         if (isFirstLoad && url != null && !url.contains("No Internet") && !url.startsWith("file:///android_asset/")) {
             hostname = url
             saveHomePage(url)
             isFirstLoad = false
-            // Update home button immediately
         }
-//        updateHomeButton(url)
     }
 
     private fun setActionBar() {
@@ -181,48 +167,36 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
     }
 
-//    fun updateHomeButton(url: String?) {
-//        val isHomePage = url == hostname
-//        supportActionBar?.setDisplayHomeAsUpEnabled(!isHomePage)
-//        supportActionBar?.setHomeButtonEnabled(!isHomePage)
-//    }
-
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.toolbar_menu, menu)
+        setupSearchView(menu)
+        return true
+    }
 
+    private fun setupSearchView(menu: Menu?) {
         val searchItem = menu?.findItem(R.id.action_search)
-        searchView = searchItem?.actionView as? SearchView
-
-        searchView?.apply {
+        searchView = (searchItem?.actionView as? SearchView)?.apply {
             queryHint = "Enter URL or search..."
             maxWidth = Integer.MAX_VALUE
 
             setOnQueryTextListener(object : SearchView.OnQueryTextListener {
                 override fun onQueryTextSubmit(query: String?): Boolean {
-                    query?.let {
-                        loadUrl(it)
-                    }
-                    searchView?.clearFocus()
-                    menu?.findItem(R.id.action_search)?.collapseActionView()
+                    query?.let { loadUrl(it) }
+                    clearFocus()
+                    searchItem.collapseActionView()
                     return true
                 }
 
-                override fun onQueryTextChange(newText: String?): Boolean {
-                    return false
-                }
+                override fun onQueryTextChange(newText: String?): Boolean = false
             })
         }
-
-        return true
     }
 
     private fun loadUrl(query: String) {
-        val url = if (query.startsWith("http://") || query.startsWith("https://")) {
-            query
-        } else if (query.contains(".")) {
-            "https://$query"
-        } else {
-            "https://www.google.com/search?q=$query"
+        val url = when {
+            query.startsWith("http://") || query.startsWith("https://") -> query
+            query.contains(".") -> "https://$query"
+            else -> "https://www.google.com/search?q=$query"
         }
         mWebView.loadUrl(url)
         Toast.makeText(this, "Loading: $url", Toast.LENGTH_SHORT).show()
@@ -236,7 +210,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             }
 
             R.id.action_home -> {
-                restHomePage()
+                resetHomePage()
                 true
             }
 
@@ -289,43 +263,41 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     @SuppressLint("SetJavaScriptEnabled")
     private fun setupWebView() {
-
-        val webSettings: WebSettings = mWebView.settings
-
-        webSettings.javaScriptEnabled = true
-        webSettings.domStorageEnabled = true  // for better web app support
-        webSettings.mediaPlaybackRequiresUserGesture = false  // Enable media playback
-        webSettings.cacheMode = WebSettings.LOAD_DEFAULT
-        webSettings.setSupportZoom(true)
-        webSettings.builtInZoomControls = true
-        webSettings.displayZoomControls = false
-        webSettings.userAgentString = mWebView.settings.userAgentString // for better compatibility
-        webSettings.allowFileAccess = true // Allow file access
-        webSettings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW // Allow mixed content
-        webSettings.useWideViewPort = true
-        webSettings.layoutAlgorithm = WebSettings.LayoutAlgorithm.NORMAL
-        webSettings.javaScriptCanOpenWindowsAutomatically = true
-        webSettings.setSupportMultipleWindows(true)
-        webSettings.setGeolocationEnabled(true)
-        webSettings.loadWithOverviewMode = true
-        webSettings.cacheMode = WebSettings.LOAD_CACHE_ELSE_NETWORK
-        webSettings.mediaPlaybackRequiresUserGesture = false
-        mWebView.setLayerType(View.LAYER_TYPE_HARDWARE, null) // hardware acceleration
-
+        mWebView.settings.apply {
+            javaScriptEnabled = true
+            domStorageEnabled = true
+            mediaPlaybackRequiresUserGesture = false
+            cacheMode = WebSettings.LOAD_CACHE_ELSE_NETWORK
+            setSupportZoom(true)
+            builtInZoomControls = true
+            displayZoomControls = false
+            allowFileAccess = true
+            mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+            useWideViewPort = true
+            layoutAlgorithm = WebSettings.LayoutAlgorithm.NORMAL
+            javaScriptCanOpenWindowsAutomatically = true
+            setSupportMultipleWindows(true)
+            setGeolocationEnabled(true)
+            loadWithOverviewMode = true
+        }
+        mWebView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
     }
 
     private fun setupSwipeRefreshLayout() {
-        mSwipeRefreshLayout.setColorSchemeResources(
-            android.R.color.holo_blue_bright, android.R.color.holo_green_light, android.R.color.holo_orange_light, android.R.color.holo_red_light
-        )
-        mSwipeRefreshLayout.setOnRefreshListener {
-            mWebView.reload()
+        mSwipeRefreshLayout.apply {
+            setColorSchemeResources(
+                android.R.color.holo_blue_bright,
+                android.R.color.holo_green_light,
+                android.R.color.holo_orange_light,
+                android.R.color.holo_red_light
+            )
+            setOnRefreshListener { mWebView.reload() }
         }
+
         mWebView.viewTreeObserver.addOnScrollChangedListener {
             mSwipeRefreshLayout.isEnabled = mWebView.scrollY == 0
         }
     }
-
 
     override fun onSaveInstanceState(outState: Bundle) {
         mWebView.saveState(outState)
@@ -339,34 +311,30 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
 
-    fun saveUrl(url: String) {
-        if (!url.contains("No Internet") && !url.startsWith("file:///android_asset/")) {
-            val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            prefs.edit { putString(KEY_LAST_URL, url) }
-        }
-    }
-
     private fun restoreSavedInstanceState(savedInstanceState: Bundle?) {
-        if (savedInstanceState != null) {
-            mWebView.restoreState(savedInstanceState)
-            isFirstLoad = false
-        } else {
-            val lastUrl = getLastUrl()
-            if (lastUrl != null) mWebView.loadUrl(lastUrl)
-            else mWebView.loadUrl(hostname)
+        when {
+            savedInstanceState != null -> {
+                mWebView.restoreState(savedInstanceState)
+                isFirstLoad = false
+            }
+
+            else -> {
+                val lastUrl = getLastUrl()
+                mWebView.loadUrl(lastUrl ?: hostname)
+            }
         }
     }
 
     // Handle back button press to navigate within the webView
-    val callback = object : OnBackPressedCallback(true) {
+    private val backPressCallback = object : OnBackPressedCallback(true) {
         override fun handleOnBackPressed() {
             when {
                 searchView?.isIconified == false -> {
                     searchView?.isIconified = true
                 }
 
-                drawerLayout.isDrawerOpen(GravityCompat.START) -> {
-                    drawerLayout.closeDrawer(GravityCompat.START)
+                mDrawerLayout.isDrawerOpen(GravityCompat.START) -> {
+                    mDrawerLayout.closeDrawer(GravityCompat.START)
                 }
 
                 myWebChromeClient.customView != null -> {
