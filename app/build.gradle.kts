@@ -4,13 +4,13 @@ plugins {
 }
 
 android {
-    namespace = "com.ali8haider.webview"
+    namespace = "com.ali8dev.webviewdemo"
     compileSdk {
         version = release(36)
     }
 
     defaultConfig {
-        applicationId = "com.ali8haider.webview"
+        applicationId = "com.ali8haider.webviewDemo"
         minSdk = 24
         targetSdk = 36
         versionCode = 1

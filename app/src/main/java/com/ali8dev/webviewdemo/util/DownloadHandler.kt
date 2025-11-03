@@ -1,13 +1,12 @@
 @file:Suppress("DEPRECATION")
 
-package com.ali8haider.webview.util
+package com.ali8dev.webviewdemo.util
 
 import android.Manifest
 import android.app.Activity
 import android.app.DownloadManager
 import android.content.Context
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.webkit.CookieManager

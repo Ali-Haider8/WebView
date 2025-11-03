@@ -1,16 +1,22 @@
-package com.ali8haider.webview
+package com.ali8dev.webviewdemo
 
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
 import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import android.widget.ProgressBar
 import android.widget.Toast
@@ -25,10 +31,13 @@ import androidx.core.content.edit
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.ali8haider.webview.util.DownloadHandler
-import com.ali8haider.webview.util.PermissionUtil
-import com.ali8haider.webview.util.UrlHandler
+import com.ali8dev.webviewdemo.util.AlertDialog
+import com.ali8dev.webviewdemo.util.DownloadHandler
+import com.ali8dev.webviewdemo.util.PermissionUtil
+import com.ali8dev.webviewdemo.util.UrlHandler
 import com.google.android.material.navigation.NavigationView
+import java.io.BufferedReader
+import java.io.InputStreamReader
 
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
@@ -43,13 +52,20 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private lateinit var myWebViewClient: MyWebViewClient
     private lateinit var hostname: String
     private var searchView: SearchView? = null
-    private var isFirstLoad = true // Flag to track first load
+    private var isFirstLoad = true
+    private val mAlertDialog = AlertDialog()
+
+    // Network monitoring
+    private var connectivityManager: ConnectivityManager? = null
+    private var networkCallback: ConnectivityManager.NetworkCallback? = null
+    private var isNetworkAvailable = true
 
     companion object {
         private const val STORAGE_PERMISSION_CODE = 100
         private const val PREFS_NAME = "WebViewPrefs"
         private const val KEY_HOMEPAGE = "homepage_url"
-        private const val KEY_LAST_URL = "last_url"
+        private const val SAVE_URL_PREFS = "SAVE_URL"
+        private const val KEY_LAST_URL = "URL"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -62,6 +78,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         setActionBar()
         checkStoragePermission()
         setupWebView()
+        setupNetworkMonitoring()
         restoreSavedInstanceState(savedInstanceState)
         setupSwipeRefreshLayout()
         setupDownloadListener()
@@ -78,13 +95,89 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         mWebView = findViewById(R.id.mWebView)
         mSwipeRefreshLayout = findViewById(R.id.mSwipeRefreshLayout)
 
-        // Initialize clients HERE
+        // Initialize clients
         myWebChromeClient = MyWebChromeClient(this)
         myWebViewClient = MyWebViewClient(this, this)
 
         // Set WebView clients
         mWebView.webChromeClient = myWebChromeClient
         mWebView.webViewClient = myWebViewClient
+    }
+
+    /**
+     * Setup real-time network monitoring
+     */
+    private fun setupNetworkMonitoring() {
+        connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            networkCallback = object : ConnectivityManager.NetworkCallback() {
+                override fun onAvailable(network: Network) {
+                    runOnUiThread {
+                        isNetworkAvailable = true
+                        // Auto-reload if on NoInternet page
+                        if (mWebView.url?.contains("NoInternet") == true) {
+                            val lastUrl = getLastUrl()
+                            if (lastUrl != null && !lastUrl.contains("NoInternet")) {
+                                mWebView.loadUrl(lastUrl)
+                            } else {
+                                mWebView.loadUrl(hostname)
+                            }
+                        }
+                    }
+                }
+
+                override fun onLost(network: Network) {
+                    runOnUiThread {
+                        isNetworkAvailable = false
+                        loadNoInternetPage()
+                    }
+                }
+
+                override fun onCapabilitiesChanged(
+                    network: Network, capabilities: NetworkCapabilities
+                ) {
+                    runOnUiThread {
+                        isNetworkAvailable = capabilities.hasCapability(
+                            NetworkCapabilities.NET_CAPABILITY_INTERNET
+                        ) && capabilities.hasCapability(
+                            NetworkCapabilities.NET_CAPABILITY_VALIDATED
+                        )
+                    }
+                }
+            }
+
+            val networkRequest = NetworkRequest.Builder().addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET).build()
+
+            connectivityManager?.registerNetworkCallback(networkRequest, networkCallback!!)
+        }
+
+        // Initial check
+        isNetworkAvailable = isInternetAvailable()
+    }
+
+    /**
+     * Check if internet is available
+     */
+    fun isInternetAvailable(): Boolean {
+        val cm = connectivityManager ?: return false
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val network = cm.activeNetwork ?: return false
+            val capabilities = cm.getNetworkCapabilities(network) ?: return false
+
+            return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+        } else {
+            @Suppress("DEPRECATION") val networkInfo = cm.activeNetworkInfo
+            @Suppress("DEPRECATION") return networkInfo != null && networkInfo.isConnected
+        }
+    }
+
+    /**
+     * Load NoInternet page from assets
+     */
+    fun loadNoInternetPage() {
+        mWebView.loadUrl("file:///android_asset/NoInternet.html")
     }
 
     private fun setupBackPressHandler() {
@@ -95,63 +188,75 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         navigationView.setNavigationItemSelectedListener(this)
 
         val toggle = ActionBarDrawerToggle(
-            this, mDrawerLayout, mToolbar,
-            R.string.navigation_drawer_open,
-            R.string.navigation_drawer_close
+            this, mDrawerLayout, mToolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close
         )
         mDrawerLayout.addDrawerListener(toggle)
         toggle.syncState()
     }
 
+    private fun readAssetFile(context: Context, fileName: String): String {
+        return try {
+            context.assets.open(fileName).use { inputStream ->
+                BufferedReader(InputStreamReader(inputStream)).use { reader ->
+                    reader.readText()
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            "Error loading file: ${e.message}"
+        }
+    }
+
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
-        val message = when (item.itemId) {
-            R.id.nav_menu1_option1 -> "Menu 1 - Option 1 Selected"
-            R.id.nav_menu1_option2 -> "Menu 1 - Option 2 Selected"
-            R.id.nav_menu2_option1 -> "Menu 2 - Option 1 Selected"
-            R.id.nav_menu2_option2 -> "Menu 2 - Option 2 Selected"
+        when (item.itemId) {
+            R.id.nav_home -> resetHomePage()
+            R.id.nav_privacy_policy -> {
+                mAlertDialog.showAlertDialog(
+                    this, getString(R.string.privacy_policy), readAssetFile(this, "privacy_policy.txt")
+                )
+            }
+
+            R.id.nav_terms_service -> {
+                mAlertDialog.showAlertDialog(
+                    this, getString(R.string.terms_and_conditions), readAssetFile(this, "terms_and_conditions.txt")
+                )
+            }
+
+            R.id.nav_settings -> {
+                Toast.makeText(this, getString(R.string.settings), Toast.LENGTH_SHORT).show()
+            }
+
+            R.id.nav_about -> {
+                Toast.makeText(this, getString(R.string.about), Toast.LENGTH_SHORT).show()
+            }
+
             else -> return false
         }
 
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
         mDrawerLayout.closeDrawer(GravityCompat.START)
         return true
     }
 
     fun resetHomePage() {
-        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit { remove(KEY_HOMEPAGE) }
+        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit {
+            remove(KEY_HOMEPAGE)
+        }
         mWebView.loadUrl(getString(R.string.google))
         isFirstLoad = true
     }
 
     private fun saveHomePage(url: String) {
-        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit { putString(KEY_HOMEPAGE, url) }
-    }
-
-    private fun getLastUrl(): String? {
-        return getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .getString(KEY_LAST_URL, null)
-    }
-
-    fun saveUrl(url: String) {
-        if (!url.contains("No Internet") && !url.startsWith("file:///android_asset/")) {
-            getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                .edit { putString(KEY_LAST_URL, url) }
+        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit {
+            putString(KEY_HOMEPAGE, url)
         }
     }
 
-    /*
-        Get Save homepage URL from SharedPreferences
-    */
-
     private fun getSavedHomePage(): String? {
-        return getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .getString(KEY_HOMEPAGE, null)
+        return getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getString(KEY_HOMEPAGE, null)
     }
 
     fun setHomepageFromFirstLoad(url: String?) {
-        if (isFirstLoad && url != null && !url.contains("No Internet") && !url.startsWith("file:///android_asset/")) {
+        if (isFirstLoad && url != null && !url.contains("NoInternet") && !url.startsWith("file:///android_asset/")) {
             hostname = url
             saveHomePage(url)
             isFirstLoad = false
@@ -176,7 +281,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private fun setupSearchView(menu: Menu?) {
         val searchItem = menu?.findItem(R.id.action_search)
         searchView = (searchItem?.actionView as? SearchView)?.apply {
-            queryHint = "Enter URL or search..."
+            queryHint = context.getString(R.string.search_view_query_hint)
             maxWidth = Integer.MAX_VALUE
 
             setOnQueryTextListener(object : SearchView.OnQueryTextListener {
@@ -187,19 +292,28 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     return true
                 }
 
-                override fun onQueryTextChange(newText: String?): Boolean = false
+                override fun onQueryTextChange(newText: String?) = false
             })
         }
     }
 
     private fun loadUrl(query: String) {
+        // Check internet before loading
+        if (!isInternetAvailable()) {
+            Toast.makeText(
+                this, getString(R.string.no_internet_connection), Toast.LENGTH_SHORT
+            ).show()
+            loadNoInternetPage()
+            return
+        }
+
         val url = when {
             query.startsWith("http://") || query.startsWith("https://") -> query
             query.contains(".") -> "https://$query"
             else -> "https://www.google.com/search?q=$query"
         }
         mWebView.loadUrl(url)
-        Toast.makeText(this, "Loading: $url", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, getString(R.string.loading, url), Toast.LENGTH_SHORT).show()
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -209,13 +323,14 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 true
             }
 
-            R.id.action_home -> {
-                resetHomePage()
-                true
-            }
-
             R.id.action_refresh -> {
-                mWebView.reload()
+                if (isInternetAvailable() || mWebView.url?.contains("NoInternet") == true) {
+                    mWebView.reload()
+                } else {
+                    Toast.makeText(
+                        this, getString(R.string.no_internet_connection), Toast.LENGTH_SHORT
+                    ).show()
+                }
                 true
             }
 
@@ -234,12 +349,22 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun shareCurrentPage() {
+        val currentUrl = mWebView.url
+        if (currentUrl.isNullOrEmpty() || currentUrl.contains("NoInternet")) {
+            Toast.makeText(
+                this, getString(R.string.no_page_to_share), Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
         val shareIntent = android.content.Intent().apply {
             action = android.content.Intent.ACTION_SEND
-            putExtra(android.content.Intent.EXTRA_TEXT, mWebView.url)
+            putExtra(android.content.Intent.EXTRA_TEXT, currentUrl)
             type = "text/plain"
         }
-        startActivity(android.content.Intent.createChooser(shareIntent, "Share via"))
+        startActivity(
+            android.content.Intent.createChooser(shareIntent, getString(R.string.share_via))
+        )
     }
 
     private fun checkStoragePermission() {
@@ -261,6 +386,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
     }
 
+    @Suppress("DEPRECATION")
     @SuppressLint("SetJavaScriptEnabled")
     private fun setupWebView() {
         mWebView.settings.apply {
@@ -276,9 +402,16 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             useWideViewPort = true
             layoutAlgorithm = WebSettings.LayoutAlgorithm.NORMAL
             javaScriptCanOpenWindowsAutomatically = true
+            allowContentAccess = true
+            allowFileAccessFromFileURLs = true
+            allowUniversalAccessFromFileURLs = true
             setSupportMultipleWindows(true)
             setGeolocationEnabled(true)
             loadWithOverviewMode = true
+
+            // Performance improvements
+            databaseEnabled = true
+            setRenderPriority(WebSettings.RenderPriority.HIGH)
         }
         mWebView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
     }
@@ -286,12 +419,18 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private fun setupSwipeRefreshLayout() {
         mSwipeRefreshLayout.apply {
             setColorSchemeResources(
-                android.R.color.holo_blue_bright,
-                android.R.color.holo_green_light,
-                android.R.color.holo_orange_light,
-                android.R.color.holo_red_light
+                android.R.color.holo_blue_bright, android.R.color.holo_green_light, android.R.color.holo_orange_light, android.R.color.holo_red_light
             )
-            setOnRefreshListener { mWebView.reload() }
+            setOnRefreshListener {
+                if (isInternetAvailable() || mWebView.url?.contains("NoInternet") == true) {
+                    mWebView.reload()
+                } else {
+                    isRefreshing = false
+                    Toast.makeText(
+                        context, getString(R.string.no_internet_connection), Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
         }
 
         mWebView.viewTreeObserver.addOnScrollChangedListener {
@@ -300,8 +439,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
-        mWebView.saveState(outState)
         super.onSaveInstanceState(outState)
+        mWebView.saveState(outState)
     }
 
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
@@ -309,7 +448,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         mWebView.restoreState(savedInstanceState)
         isFirstLoad = false
     }
-
 
     private fun restoreSavedInstanceState(savedInstanceState: Bundle?) {
         when {
@@ -319,13 +457,16 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             }
 
             else -> {
-                val lastUrl = getLastUrl()
-                mWebView.loadUrl(lastUrl ?: hostname)
+                if (!isInternetAvailable()) {
+                    loadNoInternetPage()
+                } else {
+                    val lastUrl = getLastUrl()
+                    mWebView.loadUrl(lastUrl ?: hostname)
+                }
             }
         }
     }
 
-    // Handle back button press to navigate within the webView
     private val backPressCallback = object : OnBackPressedCallback(true) {
         override fun handleOnBackPressed() {
             when {
@@ -352,7 +493,10 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+    override fun onRequestPermissionsResult(
+        requestCode: Int, permissions: Array<out String>, grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
             PermissionUtil.MY_PERMISSIONS_REQUEST_DOWNLOAD -> {
                 DownloadHandler.handlePermissionResult(this, grantResults)
@@ -362,7 +506,49 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 UrlHandler.handleSmsPermissionResult(this, grantResults)
             }
         }
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 
+    /**
+     * Save current URL to SharedPreferences
+     */
+    fun saveUrl(url: String) {
+        if (!url.contains("NoInternet") && !url.startsWith("file:///android_asset/")) {
+            getSharedPreferences(SAVE_URL_PREFS, Context.MODE_PRIVATE).edit {
+                putString(KEY_LAST_URL, url)
+            }
+        }
+    }
+
+    /**
+     * Get last saved URL from SharedPreferences
+     */
+    private fun getLastUrl(): String? {
+        return getSharedPreferences(SAVE_URL_PREFS, Context.MODE_PRIVATE).getString(KEY_LAST_URL, null)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        // Unregister network callback
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            networkCallback?.let {
+                connectivityManager?.unregisterNetworkCallback(it)
+            }
+        }
+
+        // Clean up WebView
+        mWebView.apply {
+            stopLoading()
+            destroy()
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        mWebView.onPause()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        mWebView.onResume()
+    }
 }

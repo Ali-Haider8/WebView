@@ -4,36 +4,42 @@
     tools:showIn="navigation_view">
 
     <group android:checkableBehavior="single">
-
         <item
             android:id="@+id/nav_menu1"
             android:icon="@android:drawable/ic_menu_info_details"
-            android:title="Menu 1">
+            android:title="General">
             <menu>
                 <item
-                    android:id="@+id/nav_menu1_option1"
-                    android:icon="@android:drawable/ic_menu_edit"
-                    android:title="Option 1" />
+                    android:id="@+id/nav_home"
+                    android:background="?attr/selectableItemBackground"
+                    android:icon="@drawable/home"
+                    android:title="@string/home" />
                 <item
-                    android:id="@+id/nav_menu1_option2"
-                    android:icon="@android:drawable/ic_menu_view"
-                    android:title="Option 2" />
+                    android:id="@+id/nav_privacy_policy"
+                    android:icon="@drawable/padlock"
+                    android:title="@string/privacy_policy" />
+                <item
+                    android:id="@+id/nav_terms_service"
+                    android:icon="@drawable/hammer"
+                    android:title="@string/terms_of_service" />
             </menu>
         </item>
 
         <item
             android:id="@+id/nav_menu2"
             android:icon="@android:drawable/ic_menu_preferences"
-            android:title="Menu 2">
+            android:title="Application">
             <menu>
+
                 <item
-                    android:id="@+id/nav_menu2_option1"
-                    android:icon="@android:drawable/ic_menu_send"
-                    android:title="Option 1" />
+                    android:id="@+id/nav_settings"
+                    android:icon="@drawable/settings"
+                    android:title="@string/settings" />
                 <item
-                    android:id="@+id/nav_menu2_option2"
-                    android:icon="@android:drawable/ic_menu_share"
-                    android:title="Option 2" />
+                    android:id="@+id/nav_about"
+                    android:background="?attr/selectableItemBackground"
+                    android:icon="@drawable/info"
+                    android:title="@string/about_app" />
             </menu>
         </item>
 

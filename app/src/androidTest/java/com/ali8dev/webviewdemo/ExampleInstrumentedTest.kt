@@ -1,4 +1,4 @@
-package com.ali8haider.webview
+package com.ali8dev.webviewdemo
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -19,6 +19,6 @@ class ExampleInstrumentedTest {
     fun useAppContext() {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        assertEquals("com.ali8haider.webview", appContext.packageName)
+        assertEquals("com.ali8haider.webviewDemo", appContext.packageName)
     }
 }

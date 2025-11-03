@@ -1,4 +1,4 @@
-package com.ali8haider.webview.util
+package com.ali8dev.webviewdemo.util
 
 import android.app.Activity
 import android.content.Context

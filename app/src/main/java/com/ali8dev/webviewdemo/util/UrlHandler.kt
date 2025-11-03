@@ -1,4 +1,4 @@
-package com.ali8haider.webview.util
+package com.ali8dev.webviewdemo.util
 
 import android.Manifest
 import android.app.Activity
@@ -8,7 +8,9 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
+import androidx.core.content.FileProvider
 import androidx.core.net.toUri
+import java.io.File
 
 object UrlHandler {
 
@@ -111,6 +113,11 @@ object UrlHandler {
     // Handle openGooglePlay, openYoutube, openWhatsApp, openFacebook, openInstagram, openTwitter (truncated as per your document, assume they are already there)
 
     fun handleUrl(activity: Activity, context: Context, url: String): Boolean {
+
+        if (url.startsWith("file://")) {
+            return false  // Let WebView handle it natively
+        }
+
         // 1. Let UrlHandler handle special schemes (sms:, tel:, etc.)
         if (checkUrl(activity, url)) return true
 
@@ -271,6 +278,34 @@ object UrlHandler {
             context.packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) != null
         } catch (_: Exception) {
             false
+        }
+    }
+
+    fun openPdfInExternalApp(activity: Activity, assetFileName: String) {
+        try {
+            // Copy PDF from assets to cache
+            val file = File(activity.cacheDir, assetFileName)
+            activity.assets.open(assetFileName).use { input ->
+                file.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+
+            // Open with external app
+            val uri = FileProvider.getUriForFile(
+                activity,
+                "${activity.packageName}.fileprovider",
+                file
+            )
+
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, "application/pdf")
+                flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+            }
+            activity.startActivity(intent)
+
+        } catch (e: Exception) {
+            Toast.makeText(activity, "No PDF app found", Toast.LENGTH_SHORT).show()
         }
     }
 

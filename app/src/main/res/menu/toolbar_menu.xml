@@ -7,19 +7,17 @@
         android:title="Search"
         app:actionViewClass="androidx.appcompat.widget.SearchView"
         app:showAsAction="ifRoom|collapseActionView" />
-    <item
-        android:id="@+id/action_home"
-        android:title="@string/home"
-        app:showAsAction="never" />
 
     <item
         android:id="@+id/action_refresh"
         android:title="@string/refresh"
         app:showAsAction="never" />
+
     <item
         android:id="@+id/action_share"
         android:title="@string/share"
         app:showAsAction="never" />
+
     <item
         android:id="@+id/action_exit"
         android:icon="@android:drawable/ic_notification_clear_all"

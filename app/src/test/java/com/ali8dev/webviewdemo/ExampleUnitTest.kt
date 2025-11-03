@@ -1,4 +1,4 @@
-package com.ali8haider.webview
+package com.ali8dev.webviewdemo
 
 import org.junit.Test
 
