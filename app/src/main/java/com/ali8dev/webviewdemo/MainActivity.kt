@@ -13,6 +13,7 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.widget.FrameLayout
@@ -31,6 +32,7 @@ import androidx.drawerlayout.widget.DrawerLayout
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.ali8dev.webviewdemo.util.AlertDialog
 import com.ali8dev.webviewdemo.util.DownloadHandler
+import com.ali8dev.webviewdemo.util.FileChooserHelper
 import com.ali8dev.webviewdemo.util.MyWebChromeClient
 import com.ali8dev.webviewdemo.util.MyWebViewClient
 import com.ali8dev.webviewdemo.util.PermissionUtil
@@ -51,6 +53,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private lateinit var myWebChromeClient: MyWebChromeClient
     private lateinit var myWebViewClient: MyWebViewClient
     private lateinit var hostname: String
+    var allowBackNavigation = true
+    var justClickedHome = false  // ADD THIS LINE
     private var searchView: SearchView? = null
     private var isFirstLoad = true
     private val mAlertDialog = AlertDialog()
@@ -241,7 +245,14 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit {
             remove(KEY_HOMEPAGE)
         }
+
+        // Set flags to prevent back navigation
+        allowBackNavigation = false
+        justClickedHome = true  // ADD THIS LINE
+
+        // Load the homepage
         mWebView.loadUrl(getString(R.string.google))
+
         isFirstLoad = true
     }
 
@@ -367,6 +378,32 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         )
     }
 
+    /**
+     * Open file chooser
+     */
+    fun openFileChooser(fileChooserParams: WebChromeClient.FileChooserParams?) {
+        try {
+            // Check if accept types include camera
+            val acceptTypes = fileChooserParams?.acceptTypes
+            val needsCamera = acceptTypes != null && acceptTypes.any { it.contains("image") }
+
+            // Request camera permission if needed
+            if (needsCamera && !FileChooserHelper.hasCameraPermission(this)) {
+                FileChooserHelper.requestCameraPermission(this, fileChooserParams)
+                return
+            }
+
+            // Create and launch file chooser intent
+            val intent = FileChooserHelper.createFileChooserIntent(this, fileChooserParams)
+            startActivityForResult(intent, FileChooserHelper.FILE_CHOOSER_REQUEST_CODE)
+
+        } catch (e: Exception) {
+            Toast.makeText(this, getString(R.string.cannot_open_file_chooser), Toast.LENGTH_SHORT).show()
+            myWebChromeClient.cancelFileChooser()
+            e.printStackTrace()
+        }
+    }
+
     private fun checkStoragePermission() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             if (ContextCompat.checkSelfPermission(
@@ -473,19 +510,16 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 searchView?.isIconified == false -> {
                     searchView?.isIconified = true
                 }
-
                 mDrawerLayout.isDrawerOpen(GravityCompat.START) -> {
                     mDrawerLayout.closeDrawer(GravityCompat.START)
                 }
-
                 myWebChromeClient.customView != null -> {
                     myWebChromeClient.onHideCustomView()
                 }
-
-                mWebView.canGoBack() -> {
+                // Check allowBackNavigation FIRST
+                allowBackNavigation && mWebView.canGoBack() -> {
                     mWebView.goBack()
                 }
-
                 else -> {
                     finish()
                 }

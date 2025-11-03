@@ -50,6 +50,9 @@ class MyWebViewClient(
             loadNoInternetPage(view)
             return
         }
+
+        // REMOVE THE allowBackNavigation = true LINE HERE
+
         super.onPageStarted(view, url, favicon)
     }
 
@@ -59,8 +62,15 @@ class MyWebViewClient(
         // Only save URL if it's not the NoInternet page
         if (!url.isNullOrEmpty() && !url.contains("NoInternet") && !url.startsWith("file:///android_asset/")) {
             activity.saveUrl(url)
-            // set homepage from first load AND update home button
             activity.setHomepageFromFirstLoad(url)
+
+            // Only re-enable back navigation if we didn't just click home
+            if (activity.justClickedHome) {
+                activity.justClickedHome = false
+                // Keep allowBackNavigation = false
+            } else {
+                activity.allowBackNavigation = true
+            }
         }
 
         super.onPageFinished(view, url)
