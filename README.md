@@ -1,38 +1,50 @@
-Android WebView App
+# Android WebView App
 
-- support open youtube videos in full screen mode
-- support click social media links and open in external apps
-- support click download file
-- support Swipe to refresh
-- support horizontal progress bar
+## ✅ Current Features
+- Full-screen YouTube video support
+- Social media links open in external apps
+- File downloads supported
+- Swipe-to-refresh functionality
+- Horizontal progress bar
 
+---
 
-future update to working on:
+## 🚧 Upcoming Features
 
-- Add Toolbar:
-- contains a app name
-- contains a menu button:
-- contains a share webpage button
+### 🧭 Toolbar
+- Display app name
+- Menu button
+- Share current webpage
 
+### 📂 Navigation Drawer
+- About the app
+- Webpage URL
+- Social media buttons
 
-- Add Navigation side menu
-- contains a about app button
-- contains a webpage url button
-- contains social buttons
+### 🌐 WebView Enhancements
+- File upload support
+- Smoother page loading (like Chrome)
+- Splash screen with internet check
+- Offline page when no connection
+- Save and restore last visited URL
 
-- make webview able to upload files
-- make webview load more smoothly like chrome
-- make splash screen and check internet connection on it
-- make a no internet page that displayed when internet connection is lost
-- make webview save last visited url and resotre it when relaunch app
-- support light and dark theme
-- support english and arabic language
-- support different screens sizes like tablet and small phones screen
-- check app stability on different android versions
-- add onesignal notficitaions
-- add firebase analyze
-- add admob ads
-- add privicy page
-- add terms of use page
-- add copyrights page
-- make code more simpler and easy to understand and update 
+### 🎨 UI & UX Improvements
+- Light and dark theme support
+- English and Arabic language support
+- Responsive design for tablets and small screens
+
+### 📱 Compatibility & Stability
+- Test across different Android versions
+
+### 🔔 Integrations
+- OneSignal notifications
+- Firebase Analytics
+- AdMob ads
+
+### 📄 Legal & Info Pages
+- Privacy Policy
+- Terms of Use
+- Copyrights
+
+### 🧹 Code Quality
+- Simplify and clean up code for easier updates  
