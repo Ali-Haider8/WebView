@@ -1,4 +1,4 @@
-package com.ali8dev.webviewdemo
+package com.ali8dev.webviewdemo.util
 
 import android.content.pm.ActivityInfo
 import android.os.Message
@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.widget.FrameLayout
+import com.ali8dev.webviewdemo.MainActivity
 
 @Suppress("DEPRECATION")
 class MyWebChromeClient(private val activity: MainActivity) : WebChromeClient() {

@@ -13,10 +13,8 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
-import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import android.widget.ProgressBar
 import android.widget.Toast
@@ -33,6 +31,8 @@ import androidx.drawerlayout.widget.DrawerLayout
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.ali8dev.webviewdemo.util.AlertDialog
 import com.ali8dev.webviewdemo.util.DownloadHandler
+import com.ali8dev.webviewdemo.util.MyWebChromeClient
+import com.ali8dev.webviewdemo.util.MyWebViewClient
 import com.ali8dev.webviewdemo.util.PermissionUtil
 import com.ali8dev.webviewdemo.util.UrlHandler
 import com.google.android.material.navigation.NavigationView

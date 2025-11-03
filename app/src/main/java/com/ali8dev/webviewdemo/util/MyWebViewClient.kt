@@ -1,4 +1,4 @@
-package com.ali8dev.webviewdemo
+package com.ali8dev.webviewdemo.util
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -11,11 +11,10 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
-import com.ali8dev.webviewdemo.util.UrlHandler
+import com.ali8dev.webviewdemo.MainActivity
 
 class MyWebViewClient(
-    private val activity: MainActivity,
-    private val context: Context
+    private val activity: MainActivity, private val context: Context
 ) : WebViewClient() {
 
     override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
@@ -68,9 +67,7 @@ class MyWebViewClient(
     }
 
     override fun onReceivedError(
-        view: WebView?,
-        request: WebResourceRequest?,
-        error: WebResourceError?
+        view: WebView?, request: WebResourceRequest?, error: WebResourceError?
     ) {
         // Load NoInternet page on error
         if (request?.isForMainFrame == true) {
@@ -82,10 +79,7 @@ class MyWebViewClient(
     @Suppress("DEPRECATION")
     @Deprecated("Deprecated in Java")
     override fun onReceivedError(
-        view: WebView?,
-        errorCode: Int,
-        description: String?,
-        failingUrl: String?
+        view: WebView?, errorCode: Int, description: String?, failingUrl: String?
     ) {
         // Load NoInternet page on error
         loadNoInternetPage(view)
@@ -102,13 +96,10 @@ class MyWebViewClient(
             val network = connectivityManager.activeNetwork ?: return false
             val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
 
-            return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
-                    capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+            return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
         } else {
-            @Suppress("DEPRECATION")
-            val networkInfo = connectivityManager.activeNetworkInfo
-            @Suppress("DEPRECATION")
-            return networkInfo != null && networkInfo.isConnected
+            @Suppress("DEPRECATION") val networkInfo = connectivityManager.activeNetworkInfo
+            @Suppress("DEPRECATION") return networkInfo != null && networkInfo.isConnected
         }
     }
 
