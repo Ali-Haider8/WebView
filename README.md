@@ -55,12 +55,17 @@ A lightweight Android app using WebView to display web content with enhanced fea
 
 ---
 
-## 📁 Repository Structure
-- `app/` – Main application code
-- `.idea/` – IDE configuration
-- `gradle/` – Build system files
-- `README.md` – Project overview and roadmap
+## 📸 Screenshots
+
+### 📂 Navigation Drawer
+Shows sidebar menu with sections for General and Application, including Privacy Policy, Terms of Service, Settings, and About.
+
+### 🌐 WebView Interface
+Displays Google homepage inside WebView with Arabic and Kurdish language options, search bar, and dark theme toggle.
+
+### 🚀 Splash Screen
+Simple splash screen with a globe icon, indicating the app is loading or checking internet connection.
 
 ---
 
-Feel free to contribute or suggest improvements via pull requests or issues!
+Let me know if you’d like to add setup instructions, contributor guidelines, or license info next!
