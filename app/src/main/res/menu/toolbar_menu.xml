@@ -4,9 +4,14 @@
     <item
         android:id="@+id/action_search"
         android:icon="@drawable/ic_search"
-        android:title="Search"
+        android:title="@string/search"
         app:actionViewClass="androidx.appcompat.widget.SearchView"
         app:showAsAction="ifRoom|collapseActionView" />
+
+    <item
+        android:id="@+id/action_desktop_mode"
+        android:title="Desktop site"
+        app:showAsAction="never" />
 
     <item
         android:id="@+id/action_refresh"

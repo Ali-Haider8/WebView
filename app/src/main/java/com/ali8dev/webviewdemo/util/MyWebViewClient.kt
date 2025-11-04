@@ -83,6 +83,8 @@ class MyWebViewClient(
         if (request?.isForMainFrame == true) {
             loadNoInternetPage(view)
         }
+        Log.e("WebViewError", "Error: ${error?.description}")
+
         super.onReceivedError(view, request, error)
     }
 

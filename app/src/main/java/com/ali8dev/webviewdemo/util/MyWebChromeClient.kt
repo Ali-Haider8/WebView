@@ -20,8 +20,8 @@ class MyWebChromeClient(private val activity: MainActivity) : WebChromeClient() 
     private var originalOrientation = 0
     private var originalSystemUiVisibility = 0
 
-    // File upload support
-    private var filePathCallback: ValueCallback<Array<Uri>>? = null
+    // File upload support - make it public so MainActivity can access it
+    var filePathCallback: ValueCallback<Array<Uri>>? = null
 
     override fun onShowCustomView(view: View?, callback: CustomViewCallback?) {
         Log.d("WebChrome", "onShowCustomView called")
@@ -110,14 +110,25 @@ class MyWebChromeClient(private val activity: MainActivity) : WebChromeClient() 
         filePathCallback: ValueCallback<Array<Uri>>?,
         fileChooserParams: FileChooserParams?
     ): Boolean {
-        // Cancel previous callback
-        this.filePathCallback?.onReceiveValue(null)
+        Log.d("WebChrome", "onShowFileChooser called")
+
+        // Cancel any existing callback
+        if (this.filePathCallback != null) {
+            Log.d("WebChrome", "Canceling previous callback")
+            this.filePathCallback?.onReceiveValue(null)
+            this.filePathCallback = null
+        }
+
+        // Store the new callback
         this.filePathCallback = filePathCallback
+        Log.d("WebChrome", "New callback stored")
 
         try {
             activity.openFileChooser(fileChooserParams)
             return true
         } catch (e: Exception) {
+            Log.e("WebChrome", "Error opening file chooser", e)
+            this.filePathCallback?.onReceiveValue(null)
             this.filePathCallback = null
             e.printStackTrace()
             return false
@@ -126,13 +137,25 @@ class MyWebChromeClient(private val activity: MainActivity) : WebChromeClient() 
 
     // Handle the file chooser result
     fun handleFileChooserResult(resultCode: Int, data: android.content.Intent?) {
+        Log.d("WebChrome", "handleFileChooserResult called - resultCode: $resultCode")
+
+        if (filePathCallback == null) {
+            Log.e("WebChrome", "filePathCallback is null!")
+            return
+        }
+
         val results = FileChooserHelper.handleActivityResult(resultCode, data)
+        Log.d("WebChrome", "Results: ${results?.size ?: 0} files")
+
         filePathCallback?.onReceiveValue(results)
         filePathCallback = null
+
+        Log.d("WebChrome", "Callback completed and cleared")
     }
 
     // Cancel file chooser
     fun cancelFileChooser() {
+        Log.d("WebChrome", "cancelFileChooser called")
         filePathCallback?.onReceiveValue(null)
         filePathCallback = null
     }

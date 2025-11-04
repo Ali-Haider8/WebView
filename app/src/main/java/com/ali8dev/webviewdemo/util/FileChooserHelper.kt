@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
+import android.util.Log
 import android.webkit.WebChromeClient
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
@@ -99,29 +100,37 @@ object FileChooserHelper {
      * Handle activity result from file chooser
      */
     fun handleActivityResult(resultCode: Int, data: Intent?): Array<Uri>? {
+        Log.d("FileChooserHelper", "handleActivityResult - resultCode: $resultCode, data: $data")
+
         if (resultCode != Activity.RESULT_OK) {
+            Log.d("FileChooserHelper", "Result not OK, clearing camera URI")
             cameraPhotoUri = null
             return null
         }
 
         // Check if result is from camera
         if (data == null || data.data == null) {
+            Log.d("FileChooserHelper", "No data, checking camera URI")
             cameraPhotoUri?.let {
+                Log.d("FileChooserHelper", "Returning camera photo URI: $it")
                 val results = arrayOf(it)
                 cameraPhotoUri = null
                 return results
             }
+            Log.d("FileChooserHelper", "No camera URI available")
             return null
         }
 
         // Handle single file selection
         data.data?.let { uri ->
+            Log.d("FileChooserHelper", "Single file selected: $uri")
             cameraPhotoUri = null
             return arrayOf(uri)
         }
 
         // Handle multiple file selection
         data.clipData?.let { clipData ->
+            Log.d("FileChooserHelper", "Multiple files selected: ${clipData.itemCount}")
             val results = Array(clipData.itemCount) { i ->
                 clipData.getItemAt(i).uri
             }
@@ -129,6 +138,7 @@ object FileChooserHelper {
             return results
         }
 
+        Log.d("FileChooserHelper", "No URI found in result")
         cameraPhotoUri = null
         return null
     }

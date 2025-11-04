@@ -3,13 +3,16 @@ package com.ali8dev.webviewdemo
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Resources
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -330,7 +333,12 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             android.R.id.home -> {
-                onBackPressedDispatcher.onBackPressed()
+//                onBackPressedDispatcher.onBackPressed()
+                true
+            }
+
+            R.id.action_desktop_mode -> {
+//
                 true
             }
 
@@ -368,39 +376,108 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             return
         }
 
-        val shareIntent = android.content.Intent().apply {
-            action = android.content.Intent.ACTION_SEND
-            putExtra(android.content.Intent.EXTRA_TEXT, currentUrl)
+        val shareIntent = Intent().apply {
+            action = Intent.ACTION_SEND
+            putExtra(Intent.EXTRA_TEXT, currentUrl)
             type = "text/plain"
         }
         startActivity(
-            android.content.Intent.createChooser(shareIntent, getString(R.string.share_via))
+            Intent.createChooser(shareIntent, getString(R.string.share_via))
         )
     }
+
+    // Add these methods to your MainActivity class
 
     /**
      * Open file chooser
      */
+    @Suppress("DEPRECATION")
     fun openFileChooser(fileChooserParams: WebChromeClient.FileChooserParams?) {
         try {
+            Log.d("MainActivity", "openFileChooser called")
+
             // Check if accept types include camera
             val acceptTypes = fileChooserParams?.acceptTypes
             val needsCamera = acceptTypes != null && acceptTypes.any { it.contains("image") }
 
             // Request camera permission if needed
             if (needsCamera && !FileChooserHelper.hasCameraPermission(this)) {
+                Log.d("MainActivity", "Requesting camera permission")
                 FileChooserHelper.requestCameraPermission(this, fileChooserParams)
                 return
             }
 
             // Create and launch file chooser intent
             val intent = FileChooserHelper.createFileChooserIntent(this, fileChooserParams)
+            Log.d("MainActivity", "Launching file chooser")
             startActivityForResult(intent, FileChooserHelper.FILE_CHOOSER_REQUEST_CODE)
 
         } catch (e: Exception) {
+            Log.e("MainActivity", "Error opening file chooser", e)
             Toast.makeText(this, getString(R.string.cannot_open_file_chooser), Toast.LENGTH_SHORT).show()
             myWebChromeClient.cancelFileChooser()
             e.printStackTrace()
+        }
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        Log.d("MainActivity", "onActivityResult - requestCode: $requestCode, resultCode: $resultCode")
+
+        if (requestCode == FileChooserHelper.FILE_CHOOSER_REQUEST_CODE) {
+            Log.d("MainActivity", "File chooser result received")
+            myWebChromeClient.handleFileChooserResult(resultCode, data)
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int, permissions: Array<out String>, grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        Log.d("MainActivity", "onRequestPermissionsResult - requestCode: $requestCode")
+
+        when (requestCode) {
+            PermissionUtil.MY_PERMISSIONS_REQUEST_DOWNLOAD -> {
+                DownloadHandler.handlePermissionResult(this, grantResults)
+            }
+
+            PermissionUtil.MY_PERMISSIONS_REQUEST_SMS -> {
+                UrlHandler.handleSmsPermissionResult(this, grantResults)
+            }
+
+            FileChooserHelper.CAMERA_PERMISSION_REQUEST_CODE -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Log.d("MainActivity", "Camera permission granted")
+                    // Permission granted, open file chooser
+                    val params = FileChooserHelper.getPendingFileChooserParams()
+                    openFileChooser(params)
+                } else {
+                    Log.d("MainActivity", "Camera permission denied")
+                    Toast.makeText(this, "Camera permission denied", Toast.LENGTH_SHORT).show()
+                    myWebChromeClient.cancelFileChooser()
+                }
+            }
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        // Cancel any pending file chooser
+        myWebChromeClient.cancelFileChooser()
+
+        // Unregister network callback
+        networkCallback?.let {
+            connectivityManager?.unregisterNetworkCallback(it)
+        }
+
+        // Clean up WebView
+        mWebView.apply {
+            stopLoading()
+            destroy()
         }
     }
 
@@ -427,29 +504,47 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     @SuppressLint("SetJavaScriptEnabled")
     private fun setupWebView() {
         mWebView.settings.apply {
+            // Core settings
             javaScriptEnabled = true
             domStorageEnabled = true
+            databaseEnabled = true
+
+            // Media and content
             mediaPlaybackRequiresUserGesture = false
-            cacheMode = WebSettings.LOAD_CACHE_ELSE_NETWORK
+            allowFileAccess = true
+            allowContentAccess = true
+
+            // Cache settings
+            cacheMode = WebSettings.LOAD_DEFAULT  // Changed from LOAD_CACHE_ELSE_NETWORK
+
+            // Display settings
             setSupportZoom(true)
             builtInZoomControls = true
             displayZoomControls = false
-            allowFileAccess = true
-            mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
             useWideViewPort = true
+            loadWithOverviewMode = true
             layoutAlgorithm = WebSettings.LayoutAlgorithm.NORMAL
+
+            // Security settings - DO NOT enable these for regular websites
+            mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE  // Changed
+            // REMOVE these two lines - they break modern websites:
+            // allowFileAccessFromFileURLs = true
+            // allowUniversalAccessFromFileURLs = true
+
+            // Window and geolocation
             javaScriptCanOpenWindowsAutomatically = true
-            allowContentAccess = true
-            allowFileAccessFromFileURLs = true
-            allowUniversalAccessFromFileURLs = true
             setSupportMultipleWindows(true)
             setGeolocationEnabled(true)
-            loadWithOverviewMode = true
 
             // Performance improvements
-            databaseEnabled = true
             setRenderPriority(WebSettings.RenderPriority.HIGH)
+
+//            userAgentString = "Mozilla/5.0 (Android 10; Mobile; rv:89.0) Gecko/89.0 Firefox/89.0"
+
+
+//            mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
         }
+
         mWebView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
     }
 
@@ -510,9 +605,11 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 searchView?.isIconified == false -> {
                     searchView?.isIconified = true
                 }
+
                 mDrawerLayout.isDrawerOpen(GravityCompat.START) -> {
                     mDrawerLayout.closeDrawer(GravityCompat.START)
                 }
+
                 myWebChromeClient.customView != null -> {
                     myWebChromeClient.onHideCustomView()
                 }
@@ -520,6 +617,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 allowBackNavigation && mWebView.canGoBack() -> {
                     mWebView.goBack()
                 }
+
                 else -> {
                     finish()
                 }
@@ -527,20 +625,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int, permissions: Array<out String>, grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        when (requestCode) {
-            PermissionUtil.MY_PERMISSIONS_REQUEST_DOWNLOAD -> {
-                DownloadHandler.handlePermissionResult(this, grantResults)
-            }
-
-            PermissionUtil.MY_PERMISSIONS_REQUEST_SMS -> {
-                UrlHandler.handleSmsPermissionResult(this, grantResults)
-            }
-        }
-    }
 
     /**
      * Save current URL to SharedPreferences
@@ -560,21 +644,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         return getSharedPreferences(SAVE_URL_PREFS, Context.MODE_PRIVATE).getString(KEY_LAST_URL, null)
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        // Unregister network callback
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            networkCallback?.let {
-                connectivityManager?.unregisterNetworkCallback(it)
-            }
-        }
-
-        // Clean up WebView
-        mWebView.apply {
-            stopLoading()
-            destroy()
-        }
-    }
 
     override fun onPause() {
         super.onPause()
