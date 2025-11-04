@@ -32,7 +32,6 @@
 
         <!-- WebView Content -->
         <FrameLayout
-            android:id="@+id/webview_layout"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:fitsSystemWindows="false">
@@ -58,9 +57,9 @@
 
                     <WebView
                         android:id="@+id/mWebView"
-                        android:scrollbars="vertical|horizontal"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
+                        android:scrollbars="vertical|horizontal"
                         app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
                 </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

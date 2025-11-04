@@ -1,13 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="colorPrimary">#6200EE</color>
-    <color name="colorPrimaryDark">#3700B3</color>
     <color name="colorAccent">#03DAC5</color>
-
-    <color name="clouds">#ecf0f1</color>
-    <color name="concrete">#95a5a6</color>
-    <color name="asbestos">#7f8c8d</color>
-    <color name="silver">#bdc3c7</color>
 
     <!--  <color name="m_gray_900">#212121</color>
       <color name="lightBlue">#75aaff</color>

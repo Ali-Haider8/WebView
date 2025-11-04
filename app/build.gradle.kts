@@ -10,7 +10,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.ali8haider.webviewDemo"
+        applicationId = "com.ali8dev.webviewdemo"
         minSdk = 24
         targetSdk = 36
         versionCode = 1

@@ -3,18 +3,12 @@ package com.ali8dev.webviewdemo.util
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
 import android.net.Uri
-import android.os.Build
-import android.util.Log
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import android.widget.Toast
 import com.ali8dev.webviewdemo.MainActivity
-
 
 class MyWebViewClient(
     private val activity: MainActivity, private val context: Context
@@ -22,100 +16,55 @@ class MyWebViewClient(
 
     override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
         val url = request?.url?.toString() ?: return false
-
-        // Check internet connection before loading URL
-        if (!isInternetAvailable()) {
-            loadNoInternetPage(view)
-            return true
-        }
-
-        if (url.contains("captcha") || url.contains("challenge")) {
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-            activity.startActivity(intent)
-        }
-
-        Toast.makeText(context, url, Toast.LENGTH_SHORT).show()
-        Log.d("WebViewUrl", url)
-        return UrlHandler.handleUrl(activity, context, url)
+        return handleUrl(url)
     }
 
     @Deprecated("Deprecated in Java")
     override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
-        if (url == null) return false
+        return if (url != null) handleUrl(url) else false
+    }
 
-        // Check internet connection before loading URL
-        if (!isInternetAvailable()) {
-            loadNoInternetPage(view)
-            return true
-        }
-
+    private fun handleUrl(url: String): Boolean {
+        // Handle captcha in external browser
         if (url.contains("captcha") || url.contains("challenge")) {
             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
             activity.startActivity(intent)
+            return true
         }
 
+        // Let UrlHandler decide if it should open externally
         return UrlHandler.handleUrl(activity, context, url)
     }
 
     override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
-        // Check internet connection when page starts loading
-        if (!isInternetAvailable() && !url.isNullOrEmpty() && !url.startsWith("file:///android_asset/")) {
-            loadNoInternetPage(view)
-            return
-        }
-
-        // REMOVE THE allowBackNavigation = true LINE HERE
-
         super.onPageStarted(view, url, favicon)
+
+        // Check network only if not loading local assets
+        if (!activity.isNetworkAvailable && !url.isNullOrEmpty() && !url.startsWith("file:///android_asset/")) {
+            activity.loadNoInternetPage()
+        }
     }
 
     override fun onPageFinished(view: WebView?, url: String?) {
+        super.onPageFinished(view, url)
+
         activity.mSwipeRefreshLayout.isRefreshing = false
 
+        // Save URL if it's a valid web page
         if (!url.isNullOrEmpty() && !url.contains("NoInternet") && !url.startsWith("file:///android_asset/")) {
             activity.saveUrl(url)
-            activity.setHomepageFromFirstLoad(url)
-            if (activity.justClickedHome) {
-                activity.justClickedHome = false
-            } else {
-                activity.allowBackNavigation = true
-            }
         }
-
-        // 🔒 Prevent any JavaScript from auto-focusing inputs
-        val blockFocusJS = """
-        (function() {
-            function disableFocus() {
-                const inputs = document.querySelectorAll('input, textarea');
-                inputs.forEach(el => {
-                    if (!el.hasOwnProperty('_focus')) {
-                        el._focus = el.focus;
-                        el.focus = function() {}; // disable JS-triggered focus
-                    }
-                });
-            }
-            disableFocus();
-            // Keep reapplying the patch in case new inputs are added
-            const observer = new MutationObserver(disableFocus);
-            observer.observe(document.body, { childList: true, subtree: true });
-        })();
-    """
-        view?.evaluateJavascript(blockFocusJS, null)
-
-        super.onPageFinished(view, url)
     }
-
 
     override fun onReceivedError(
         view: WebView?, request: WebResourceRequest?, error: WebResourceError?
     ) {
-        // Load NoInternet page on error
-        if (request?.isForMainFrame == true) {
-            loadNoInternetPage(view)
-        }
-        Log.e("WebViewError", "Error: ${error?.description}")
-
         super.onReceivedError(view, request, error)
+
+        // Only load error page for main frame errors
+        if (request?.isForMainFrame == true) {
+            activity.loadNoInternetPage()
+        }
     }
 
     @Suppress("DEPRECATION")
@@ -123,34 +72,7 @@ class MyWebViewClient(
     override fun onReceivedError(
         view: WebView?, errorCode: Int, description: String?, failingUrl: String?
     ) {
-        // Load NoInternet page on error
-        loadNoInternetPage(view)
         super.onReceivedError(view, errorCode, description, failingUrl)
+        activity.loadNoInternetPage()
     }
-
-    /**
-     * Check if internet connection is available
-     */
-    private fun isInternetAvailable(): Boolean {
-        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val network = connectivityManager.activeNetwork ?: return false
-            val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
-
-            return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
-        } else {
-            @Suppress("DEPRECATION") val networkInfo = connectivityManager.activeNetworkInfo
-            @Suppress("DEPRECATION") return networkInfo != null && networkInfo.isConnected
-        }
-    }
-
-    /**
-     * Load the NoInternet.html page from assets
-     */
-    private fun loadNoInternetPage(view: WebView?) {
-        view?.loadUrl("file:///android_asset/NoInternet.html")
-    }
-
-
 }

@@ -1,8 +1,5 @@
 <resources>
     <string name="app_name">WebView</string>
-    <string name="youtube">https://www.youtube.com/</string>
-    <string name="google">https://www.google.com</string>
-    <string name="gsmarena">https://m.gsmarena.com/oppo_find_x9_pro-14094.php</string>
     <string name="refresh">Refresh</string>
     <string name="share">Share</string>
     <string name="home">Home</string>
@@ -10,44 +7,17 @@
     <string name="navigation_drawer_close">Close navigation drawer</string>
     <string name="nav_header_desc">Navigation header</string>
     <string name="search_view_query_hint">Enter URL or search...</string>
-    <string name="loading">Loading: %1$s</string>
     <string name="share_via">Share via</string>
-
     <string name="no_internet_connection">No internet connection</string>
     <string name="no_page_to_share">No page to share</string>
     <string name="privacy_policy">Privacy Policy</string>
     <string name="terms_and_conditions">Terms and Conditions</string>
     <string name="settings">Settings</string>
     <string name="about">About</string>
-
-    <string name="toolbar_subtitle"><![CDATA[QuizzStar - Love , Funny , Personality & More]]></string>
-    <string name="chooser_text">Select App</string>
-    "
-    <string name="share_text1">Download App</string>
-    <string name="share_page_hint">Press and hold the side menu button to share the page</string>
-    <string name="chooser2_text">Share the page using</string>
-    <string name="share_text2">For Android devices through the link :-</string>
-    <string name="connection_failed">The connection failed</string>
-    <string name="check_internet">Make sure you are connected to the Internet</string>
     <string name="close">Close</string>
-    <string name="support_us">Support us</string>
-    <string name="share_app">Share App</string>
-    <string name="rate_app">Rate App</string>
     <string name="about_app">About</string>
     <string name="cannot_open_file_chooser">Cannot open file chooser</string>
-    <string name="failed_to_upload_image">Failed to Upload Image</string>
     <string name="search">Search</string>
     <string name="terms_of_service">Terms Of Service</string>
-    <string name="leader_board">Leader Board</string>
-    <string name="popular_quizzes">Popular Quizzes</string>
-    <string name="latest_quizzes">Latest Quizzes</string>
-    <string name="contact_us">Contact US</string>
-
-    <string name="app_unit_id">ca-app-pub-5167234988152277~6227154120</string>
-    <string name="banner_ad_unit_id">ca-app-pub-5167234988152277/6032601055</string>
-    <string name="interstitial_ad_unit_id">ca-app-pub-5167234988152277/7316874510</string>
-    <string name="test_device_id">F8702296A4D59A33DE02AE66608A565A</string>
-    <string name="default_notification_channel_id">fcm_default_channel</string>
-    <string name="closes">Close</string>
     <string name="tg_ali_haider_8">tg: ali_haider_8</string>
 </resources>

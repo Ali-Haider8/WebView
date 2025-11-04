@@ -29,6 +29,7 @@ object UrlHandler {
         }
         return false
     }
+
     /**
      * Open non-HTTP/HTTPS URLs in external apps
      * @param activity Activity context
@@ -86,7 +87,7 @@ object UrlHandler {
         }
 
         try {
-            val smsIntent = Intent(Intent.ACTION_VIEW).setDataAndType(url.toUri(),"vnd.android-dir/mms-sms")
+            val smsIntent = Intent(Intent.ACTION_VIEW).setDataAndType(url.toUri(), "vnd.android-dir/mms-sms")
             activity.startActivity(smsIntent)
         } catch (_: Exception) {
             Toast.makeText(activity, "Unable to open SMS app", Toast.LENGTH_SHORT).show()
