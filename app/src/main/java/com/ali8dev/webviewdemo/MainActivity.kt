@@ -15,6 +15,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
+import android.view.MotionEvent
 import android.view.View
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
@@ -168,7 +169,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         // Reload current page to apply changes
         mWebView.reload()
 
-        val message = if (isDesktopMode) "Desktop mode enabled" else  "Desktop mode disabled"
+        val message = if (isDesktopMode) "Desktop mode enabled" else "Desktop mode disabled"
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
@@ -177,38 +178,38 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
      */
     @SuppressLint("SetJavaScriptEnabled")
     private fun applyDesktopMode() {
-        mWebView.settings.apply {
-            if (isDesktopMode) {
-                // Desktop mode settings
+//        mWebView.settings.apply {
+        if (isDesktopMode) {
+            // Desktop mode settings
 
 //                userAgentString = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 //                userAgentString = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-                userAgentString="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-                useWideViewPort = true
-                loadWithOverviewMode = true
+            mWebView.settings.userAgentString = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+            mWebView.settings.useWideViewPort = true
+            mWebView.settings.loadWithOverviewMode = true
 
-                // Let the page scale naturally (don't force zoom)
-//                setInitialScale(0)
+            // Let the page scale naturally (don't force zoom)
+            mWebView.setInitialScale(0)
 
-                // Enable zoom controls for desktop mode
-                setSupportZoom(true)
-                builtInZoomControls = true
-                displayZoomControls = false
-            } else {
-                // Mobile mode settings (default)
-                userAgentString = WebSettings.getDefaultUserAgent(this@MainActivity)
-                useWideViewPort = true
-                loadWithOverviewMode = true
+            // Enable zoom controls for desktop mode
+            mWebView.settings.setSupportZoom(true)
+            mWebView.settings.builtInZoomControls = true
+            mWebView.settings.displayZoomControls = false
+        } else {
+            // Mobile mode settings (default)
+            mWebView.settings.userAgentString = WebSettings.getDefaultUserAgent(this@MainActivity)
+            mWebView.settings.useWideViewPort = true
+            mWebView.settings.loadWithOverviewMode = true
 
-                // Reset scale
-//                setInitialScale(0)
+            // Reset scale
+            mWebView.setInitialScale(0)
 
-                // Keep zoom controls enabled
-                setSupportZoom(true)
-                builtInZoomControls = true
-                displayZoomControls = false
-            }
+            // Keep zoom controls enabled
+            mWebView.settings.setSupportZoom(true)
+            mWebView.settings.builtInZoomControls = true
+            mWebView.settings.displayZoomControls = false
         }
+//        }
     }
 
     /**
@@ -335,18 +336,22 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                     readAssetFile(this, "privacy_policy.txt")
                 )
             }
+
             R.id.nav_terms_service -> {
                 mAlertDialog.showAlertDialog(
                     this, getString(R.string.terms_and_conditions),
                     readAssetFile(this, "terms_and_conditions.txt")
                 )
             }
+
             R.id.nav_settings -> {
                 Toast.makeText(this, getString(R.string.settings), Toast.LENGTH_SHORT).show()
             }
+
             R.id.nav_about -> {
                 Toast.makeText(this, getString(R.string.about), Toast.LENGTH_SHORT).show()
             }
+
             else -> return false
         }
 
@@ -379,7 +384,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     fun setHomepageFromFirstLoad(url: String?) {
         if (isFirstLoad && url != null && !url.contains("NoInternet") &&
-            !url.startsWith("file:///android_asset/")) {
+            !url.startsWith("file:///android_asset/")
+        ) {
             hostname = url
             saveHomePage(url)
             isFirstLoad = false
@@ -422,6 +428,30 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
                 override fun onQueryTextChange(newText: String?) = false
             })
+
+            // Add this: Set focus change listener to close when focus is lost
+            setOnQueryTextFocusChangeListener { _, hasFocus ->
+                if (!hasFocus) {
+                    clearFocus()
+                    searchItem.collapseActionView()
+                }
+            }
+        }
+        setupWebViewTouchListener(searchItem)
+    }
+
+    // Add this new method
+    private fun setupWebViewTouchListener(searchItem: MenuItem?) {
+        mWebView.setOnTouchListener { _, event ->
+            if (event.action == MotionEvent.ACTION_DOWN) {
+                // If search view is open, close it
+                if (searchView?.isIconified == false) {
+                    searchView?.isIconified = true
+                    searchItem?.collapseActionView()
+                    return@setOnTouchListener true
+                }
+            }
+            return@setOnTouchListener false
         }
     }
 
@@ -448,10 +478,12 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             android.R.id.home -> {
                 true
             }
+
             R.id.action_desktop_mode -> {
                 toggleDesktopMode()
                 true
             }
+
             R.id.action_refresh -> {
                 if (isInternetAvailable() || mWebView.url?.contains("NoInternet") == true) {
                     mWebView.reload()
@@ -462,14 +494,17 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 }
                 true
             }
+
             R.id.action_share -> {
                 shareCurrentPage()
                 true
             }
+
             R.id.action_exit -> {
                 finish()
                 true
             }
+
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -540,9 +575,11 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             PermissionUtil.MY_PERMISSIONS_REQUEST_DOWNLOAD -> {
                 DownloadHandler.handlePermissionResult(this, grantResults)
             }
+
             PermissionUtil.MY_PERMISSIONS_REQUEST_SMS -> {
                 UrlHandler.handleSmsPermissionResult(this, grantResults)
             }
+
             FileChooserHelper.CAMERA_PERMISSION_REQUEST_CODE -> {
                 if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     Log.d("MainActivity", "Camera permission granted")
@@ -669,6 +706,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 mWebView.restoreState(savedInstanceState)
                 isFirstLoad = false
             }
+
             else -> {
                 if (!isInternetAvailable()) {
                     loadNoInternetPage()
@@ -686,15 +724,19 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 searchView?.isIconified == false -> {
                     searchView?.isIconified = true
                 }
+
                 mDrawerLayout.isDrawerOpen(GravityCompat.START) -> {
                     mDrawerLayout.closeDrawer(GravityCompat.START)
                 }
+
                 myWebChromeClient.customView != null -> {
                     myWebChromeClient.onHideCustomView()
                 }
+
                 allowBackNavigation && mWebView.canGoBack() -> {
                     mWebView.goBack()
                 }
+
                 else -> {
                     finish()
                 }
