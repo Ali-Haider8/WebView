@@ -16,6 +16,31 @@ A lightweight Android app using WebView to display web content with enhanced fea
 - Download Handler
 
 ---
+## 📸 Screenshots
+
+<table style="width: 100%; background-color: #f0f0f0; border-collapse: collapse;">
+  <tr>
+    <td style="padding: 20px; border-right: 2px solid #ccc;">
+      <div style="text-align: center;">
+        <img src="https://i.vgy.me/y8OJaC.jpg" alt="Navigation Drawer" style="border: 4px solid #555; border-radius: 6px; width: 180px;"><br><br>
+        <strong>Screenshot 1:</strong><br>Navigation Drawer with Privacy, Terms, Settings, and About.
+      </div>
+    </td>
+    <td style="padding: 20px; border-right: 2px solid #ccc;">
+      <div style="text-align: center;">
+        <img src="https://i.vgy.me/GCtGmR.jpg" alt="WebView Interface" style="border: 4px solid #555; border-radius: 6px; width: 180px;"><br><br>
+        <strong>Screenshot 2:</strong><br>WebView showing Google homepage with Arabic/Kurdish options.
+      </div>
+    </td>
+    <td style="padding: 20px;">
+      <div style="text-align: center;">
+        <img src="https://i.vgy.me/MotEFk.jpg" alt="Splash Screen" style="border: 4px solid #555; border-radius: 6px; width: 180px;"><br><br>
+        <strong>Screenshot 3:</strong><br>Splash screen with globe icon and clean layout.
+      </div>
+    </td>
+  </tr>
+</table>
+
 
 ## 🚧 Upcoming Features
 
@@ -55,31 +80,6 @@ A lightweight Android app using WebView to display web content with enhanced fea
 - Simplify and clean up code for easier updates  
 
 ---
-## 📸 Screenshots
-
-<table style="width: 100%; background-color: #f0f0f0; border-collapse: collapse;">
-  <tr>
-    <td style="padding: 20px; border-right: 2px solid #ccc;">
-      <div style="text-align: center;">
-        <img src="https://i.vgy.me/y8OJaC.jpg" alt="Navigation Drawer" style="border: 4px solid #555; border-radius: 6px; width: 180px;"><br><br>
-        <strong>Screenshot 1:</strong><br>Navigation Drawer with Privacy, Terms, Settings, and About.
-      </div>
-    </td>
-    <td style="padding: 20px; border-right: 2px solid #ccc;">
-      <div style="text-align: center;">
-        <img src="https://i.vgy.me/GCtGmR.jpg" alt="WebView Interface" style="border: 4px solid #555; border-radius: 6px; width: 180px;"><br><br>
-        <strong>Screenshot 2:</strong><br>WebView showing Google homepage with Arabic/Kurdish options.
-      </div>
-    </td>
-    <td style="padding: 20px;">
-      <div style="text-align: center;">
-        <img src="https://i.vgy.me/MotEFk.jpg" alt="Splash Screen" style="border: 4px solid #555; border-radius: 6px; width: 180px;"><br><br>
-        <strong>Screenshot 3:</strong><br>Splash screen with globe icon and clean layout.
-      </div>
-    </td>
-  </tr>
-</table>
-
 
 ### 📂 Navigation Drawer
 Shows sidebar menu with sections for General and Application, including Privacy Policy, Terms of Service, Settings, and About.
