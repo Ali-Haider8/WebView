@@ -12,7 +12,8 @@ A lightweight Android app using WebView to display web content with enhanced fea
 - Horizontal progress bar  
 - Toolbar with app name and share button  
 - File upload support in WebView  
-- Alert dialog for user feedback  
+- Alert dialog for user feedback
+- Download Handler
 
 ---
 
