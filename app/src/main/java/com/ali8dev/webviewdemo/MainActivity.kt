@@ -5,7 +5,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.content.res.Resources
+import android.content.res.Configuration
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
@@ -57,10 +57,14 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private lateinit var myWebViewClient: MyWebViewClient
     private lateinit var hostname: String
     var allowBackNavigation = true
-    var justClickedHome = false  // ADD THIS LINE
+    var justClickedHome = false
     private var searchView: SearchView? = null
     private var isFirstLoad = true
     private val mAlertDialog = AlertDialog()
+
+    // Desktop mode variables
+    private var isDesktopMode = false
+    private var desktopModeMenuItem: MenuItem? = null
 
     // Network monitoring
     private var connectivityManager: ConnectivityManager? = null
@@ -73,6 +77,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         private const val KEY_HOMEPAGE = "homepage_url"
         private const val SAVE_URL_PREFS = "SAVE_URL"
         private const val KEY_LAST_URL = "URL"
+        private const val KEY_DESKTOP_MODE = "desktop_mode"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -84,6 +89,10 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         initializeViews()
         setActionBar()
         checkStoragePermission()
+
+        // Load desktop mode preference and detect tablet
+        loadDesktopModePreference()
+
         setupWebView()
         setupNetworkMonitoring()
         restoreSavedInstanceState(savedInstanceState)
@@ -112,6 +121,101 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     /**
+     * Check if device is tablet or has large screen
+     */
+    private fun isTablet(): Boolean {
+        val screenLayout = resources.configuration.screenLayout and Configuration.SCREENLAYOUT_SIZE_MASK
+        return screenLayout >= Configuration.SCREENLAYOUT_SIZE_LARGE
+    }
+
+    /**
+     * Load desktop mode preference or detect tablet
+     */
+    private fun loadDesktopModePreference() {
+        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+
+        // Check if this is first time opening the app
+        val isFirstRun = !prefs.contains(KEY_DESKTOP_MODE)
+
+        if (isFirstRun && isTablet()) {
+            // First time on tablet - enable desktop mode by default
+            isDesktopMode = true
+            saveDesktopModePreference(true)
+        } else {
+            // Load saved preference
+            isDesktopMode = prefs.getBoolean(KEY_DESKTOP_MODE, false)
+        }
+    }
+
+    /**
+     * Save desktop mode preference
+     */
+    private fun saveDesktopModePreference(enabled: Boolean) {
+        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit {
+            putBoolean(KEY_DESKTOP_MODE, enabled)
+        }
+    }
+
+    /**
+     * Toggle desktop mode on/off
+     */
+    private fun toggleDesktopMode() {
+        isDesktopMode = !isDesktopMode
+        saveDesktopModePreference(isDesktopMode)
+        applyDesktopMode()
+        updateDesktopModeMenuItem()
+
+        // Reload current page to apply changes
+        mWebView.reload()
+
+        val message = if (isDesktopMode) "Desktop mode enabled" else  "Desktop mode disabled"
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+
+    /**
+     * Apply desktop mode settings to WebView
+     */
+    @SuppressLint("SetJavaScriptEnabled")
+    private fun applyDesktopMode() {
+        mWebView.settings.apply {
+            if (isDesktopMode) {
+                // Desktop mode settings
+                userAgentString = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                useWideViewPort = true
+                loadWithOverviewMode = true
+
+                // Let the page scale naturally (don't force zoom)
+//                setInitialScale(0)
+
+                // Enable zoom controls for desktop mode
+                setSupportZoom(true)
+                builtInZoomControls = true
+                displayZoomControls = false
+            } else {
+                // Mobile mode settings (default)
+                userAgentString = WebSettings.getDefaultUserAgent(this@MainActivity)
+                useWideViewPort = true
+                loadWithOverviewMode = true
+
+                // Reset scale
+//                setInitialScale(0)
+
+                // Keep zoom controls enabled
+                setSupportZoom(true)
+                builtInZoomControls = true
+                displayZoomControls = false
+            }
+        }
+    }
+
+    /**
+     * Update desktop mode menu item checkbox state
+     */
+    private fun updateDesktopModeMenuItem() {
+        desktopModeMenuItem?.isChecked = isDesktopMode
+    }
+
+    /**
      * Setup real-time network monitoring
      */
     private fun setupNetworkMonitoring() {
@@ -122,7 +226,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 override fun onAvailable(network: Network) {
                     runOnUiThread {
                         isNetworkAvailable = true
-                        // Auto-reload if on NoInternet page
                         if (mWebView.url?.contains("NoInternet") == true) {
                             val lastUrl = getLastUrl()
                             if (lastUrl != null && !lastUrl.contains("NoInternet")) {
@@ -154,12 +257,13 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 }
             }
 
-            val networkRequest = NetworkRequest.Builder().addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET).build()
+            val networkRequest = NetworkRequest.Builder()
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                .build()
 
             connectivityManager?.registerNetworkCallback(networkRequest, networkCallback!!)
         }
 
-        // Initial check
         isNetworkAvailable = isInternetAvailable()
     }
 
@@ -173,10 +277,13 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             val network = cm.activeNetwork ?: return false
             val capabilities = cm.getNetworkCapabilities(network) ?: return false
 
-            return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+            return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+                    capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
         } else {
-            @Suppress("DEPRECATION") val networkInfo = cm.activeNetworkInfo
-            @Suppress("DEPRECATION") return networkInfo != null && networkInfo.isConnected
+            @Suppress("DEPRECATION")
+            val networkInfo = cm.activeNetworkInfo
+            @Suppress("DEPRECATION")
+            return networkInfo != null && networkInfo.isConnected
         }
     }
 
@@ -195,7 +302,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         navigationView.setNavigationItemSelectedListener(this)
 
         val toggle = ActionBarDrawerToggle(
-            this, mDrawerLayout, mToolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close
+            this, mDrawerLayout, mToolbar,
+            R.string.navigation_drawer_open,
+            R.string.navigation_drawer_close
         )
         mDrawerLayout.addDrawerListener(toggle)
         toggle.syncState()
@@ -219,24 +328,22 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             R.id.nav_home -> resetHomePage()
             R.id.nav_privacy_policy -> {
                 mAlertDialog.showAlertDialog(
-                    this, getString(R.string.privacy_policy), readAssetFile(this, "privacy_policy.txt")
+                    this, getString(R.string.privacy_policy),
+                    readAssetFile(this, "privacy_policy.txt")
                 )
             }
-
             R.id.nav_terms_service -> {
                 mAlertDialog.showAlertDialog(
-                    this, getString(R.string.terms_and_conditions), readAssetFile(this, "terms_and_conditions.txt")
+                    this, getString(R.string.terms_and_conditions),
+                    readAssetFile(this, "terms_and_conditions.txt")
                 )
             }
-
             R.id.nav_settings -> {
                 Toast.makeText(this, getString(R.string.settings), Toast.LENGTH_SHORT).show()
             }
-
             R.id.nav_about -> {
                 Toast.makeText(this, getString(R.string.about), Toast.LENGTH_SHORT).show()
             }
-
             else -> return false
         }
 
@@ -249,13 +356,10 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             remove(KEY_HOMEPAGE)
         }
 
-        // Set flags to prevent back navigation
         allowBackNavigation = false
-        justClickedHome = true  // ADD THIS LINE
+        justClickedHome = true
 
-        // Load the homepage
         mWebView.loadUrl(getString(R.string.google))
-
         isFirstLoad = true
     }
 
@@ -266,11 +370,13 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun getSavedHomePage(): String? {
-        return getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getString(KEY_HOMEPAGE, null)
+        return getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getString(KEY_HOMEPAGE, null)
     }
 
     fun setHomepageFromFirstLoad(url: String?) {
-        if (isFirstLoad && url != null && !url.contains("NoInternet") && !url.startsWith("file:///android_asset/")) {
+        if (isFirstLoad && url != null && !url.contains("NoInternet") &&
+            !url.startsWith("file:///android_asset/")) {
             hostname = url
             saveHomePage(url)
             isFirstLoad = false
@@ -289,6 +395,11 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.toolbar_menu, menu)
         setupSearchView(menu)
+
+        // Setup desktop mode menu item
+        desktopModeMenuItem = menu?.findItem(R.id.action_desktop_mode)
+        updateDesktopModeMenuItem()
+
         return true
     }
 
@@ -312,7 +423,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun loadUrl(query: String) {
-        // Check internet before loading
         if (!isInternetAvailable()) {
             Toast.makeText(
                 this, getString(R.string.no_internet_connection), Toast.LENGTH_SHORT
@@ -333,15 +443,12 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             android.R.id.home -> {
-//                onBackPressedDispatcher.onBackPressed()
                 true
             }
-
             R.id.action_desktop_mode -> {
-//
+                toggleDesktopMode()
                 true
             }
-
             R.id.action_refresh -> {
                 if (isInternetAvailable() || mWebView.url?.contains("NoInternet") == true) {
                     mWebView.reload()
@@ -352,17 +459,14 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 }
                 true
             }
-
             R.id.action_share -> {
                 shareCurrentPage()
                 true
             }
-
             R.id.action_exit -> {
                 finish()
                 true
             }
-
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -381,33 +485,23 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             putExtra(Intent.EXTRA_TEXT, currentUrl)
             type = "text/plain"
         }
-        startActivity(
-            Intent.createChooser(shareIntent, getString(R.string.share_via))
-        )
+        startActivity(Intent.createChooser(shareIntent, getString(R.string.share_via)))
     }
 
-    // Add these methods to your MainActivity class
-
-    /**
-     * Open file chooser
-     */
     @Suppress("DEPRECATION")
     fun openFileChooser(fileChooserParams: WebChromeClient.FileChooserParams?) {
         try {
             Log.d("MainActivity", "openFileChooser called")
 
-            // Check if accept types include camera
             val acceptTypes = fileChooserParams?.acceptTypes
             val needsCamera = acceptTypes != null && acceptTypes.any { it.contains("image") }
 
-            // Request camera permission if needed
             if (needsCamera && !FileChooserHelper.hasCameraPermission(this)) {
                 Log.d("MainActivity", "Requesting camera permission")
                 FileChooserHelper.requestCameraPermission(this, fileChooserParams)
                 return
             }
 
-            // Create and launch file chooser intent
             val intent = FileChooserHelper.createFileChooserIntent(this, fileChooserParams)
             Log.d("MainActivity", "Launching file chooser")
             startActivityForResult(intent, FileChooserHelper.FILE_CHOOSER_REQUEST_CODE)
@@ -443,15 +537,12 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             PermissionUtil.MY_PERMISSIONS_REQUEST_DOWNLOAD -> {
                 DownloadHandler.handlePermissionResult(this, grantResults)
             }
-
             PermissionUtil.MY_PERMISSIONS_REQUEST_SMS -> {
                 UrlHandler.handleSmsPermissionResult(this, grantResults)
             }
-
             FileChooserHelper.CAMERA_PERMISSION_REQUEST_CODE -> {
                 if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     Log.d("MainActivity", "Camera permission granted")
-                    // Permission granted, open file chooser
                     val params = FileChooserHelper.getPendingFileChooserParams()
                     openFileChooser(params)
                 } else {
@@ -466,15 +557,12 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     override fun onDestroy() {
         super.onDestroy()
 
-        // Cancel any pending file chooser
         myWebChromeClient.cancelFileChooser()
 
-        // Unregister network callback
         networkCallback?.let {
             connectivityManager?.unregisterNetworkCallback(it)
         }
 
-        // Clean up WebView
         mWebView.apply {
             stopLoading()
             destroy()
@@ -488,7 +576,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
                 ActivityCompat.requestPermissions(
-                    this, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), STORAGE_PERMISSION_CODE
+                    this, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                    STORAGE_PERMISSION_CODE
                 )
             }
         }
@@ -504,54 +593,43 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     @SuppressLint("SetJavaScriptEnabled")
     private fun setupWebView() {
         mWebView.settings.apply {
-            // Core settings
             javaScriptEnabled = true
             domStorageEnabled = true
             databaseEnabled = true
 
-            // Media and content
             mediaPlaybackRequiresUserGesture = false
             allowFileAccess = true
             allowContentAccess = true
 
-            // Cache settings
-            cacheMode = WebSettings.LOAD_DEFAULT  // Changed from LOAD_CACHE_ELSE_NETWORK
+            cacheMode = WebSettings.LOAD_DEFAULT
 
-            // Display settings
             setSupportZoom(true)
             builtInZoomControls = true
             displayZoomControls = false
-            useWideViewPort = true
-            loadWithOverviewMode = true
             layoutAlgorithm = WebSettings.LayoutAlgorithm.NORMAL
 
-            // Security settings - DO NOT enable these for regular websites
-            mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE  // Changed
-            // REMOVE these two lines - they break modern websites:
-            // allowFileAccessFromFileURLs = true
-            // allowUniversalAccessFromFileURLs = true
+            mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
 
-            // Window and geolocation
             javaScriptCanOpenWindowsAutomatically = true
             setSupportMultipleWindows(true)
             setGeolocationEnabled(true)
 
-            // Performance improvements
             setRenderPriority(WebSettings.RenderPriority.HIGH)
-
-//            userAgentString = "Mozilla/5.0 (Android 10; Mobile; rv:89.0) Gecko/89.0 Firefox/89.0"
-
-
-//            mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
         }
 
         mWebView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+
+        // Apply desktop mode settings
+        applyDesktopMode()
     }
 
     private fun setupSwipeRefreshLayout() {
         mSwipeRefreshLayout.apply {
             setColorSchemeResources(
-                android.R.color.holo_blue_bright, android.R.color.holo_green_light, android.R.color.holo_orange_light, android.R.color.holo_red_light
+                android.R.color.holo_blue_bright,
+                android.R.color.holo_green_light,
+                android.R.color.holo_orange_light,
+                android.R.color.holo_red_light
             )
             setOnRefreshListener {
                 if (isInternetAvailable() || mWebView.url?.contains("NoInternet") == true) {
@@ -559,7 +637,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 } else {
                     isRefreshing = false
                     Toast.makeText(
-                        context, getString(R.string.no_internet_connection), Toast.LENGTH_SHORT
+                        context, getString(R.string.no_internet_connection),
+                        Toast.LENGTH_SHORT
                     ).show()
                 }
             }
@@ -587,7 +666,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 mWebView.restoreState(savedInstanceState)
                 isFirstLoad = false
             }
-
             else -> {
                 if (!isInternetAvailable()) {
                     loadNoInternetPage()
@@ -605,19 +683,15 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 searchView?.isIconified == false -> {
                     searchView?.isIconified = true
                 }
-
                 mDrawerLayout.isDrawerOpen(GravityCompat.START) -> {
                     mDrawerLayout.closeDrawer(GravityCompat.START)
                 }
-
                 myWebChromeClient.customView != null -> {
                     myWebChromeClient.onHideCustomView()
                 }
-                // Check allowBackNavigation FIRST
                 allowBackNavigation && mWebView.canGoBack() -> {
                     mWebView.goBack()
                 }
-
                 else -> {
                     finish()
                 }
@@ -625,10 +699,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
     }
 
-
-    /**
-     * Save current URL to SharedPreferences
-     */
     fun saveUrl(url: String) {
         if (!url.contains("NoInternet") && !url.startsWith("file:///android_asset/")) {
             getSharedPreferences(SAVE_URL_PREFS, Context.MODE_PRIVATE).edit {
@@ -637,13 +707,10 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
     }
 
-    /**
-     * Get last saved URL from SharedPreferences
-     */
     private fun getLastUrl(): String? {
-        return getSharedPreferences(SAVE_URL_PREFS, Context.MODE_PRIVATE).getString(KEY_LAST_URL, null)
+        return getSharedPreferences(SAVE_URL_PREFS, Context.MODE_PRIVATE)
+            .getString(KEY_LAST_URL, null)
     }
-
 
     override fun onPause() {
         super.onPause()
