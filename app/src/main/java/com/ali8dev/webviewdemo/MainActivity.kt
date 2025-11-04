@@ -148,6 +148,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
     }
 
+    @Suppress("DEPRECATION")
     @SuppressLint("SetJavaScriptEnabled")
     private fun setupWebView() {
         // Load desktop mode preference
@@ -260,6 +261,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         isNetworkAvailable = checkInternetConnection()
     }
 
+    @Suppress("ANNOTATIONS_ON_BLOCK_LEVEL_EXPRESSION_ON_THE_SAME_LINE")
     private fun checkInternetConnection(): Boolean {
         val cm = connectivityManager ?: return false
 
@@ -457,7 +459,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
             val intent = FileChooserHelper.createFileChooserIntent(this, fileChooserParams)
             startActivityForResult(intent, FileChooserHelper.FILE_CHOOSER_REQUEST_CODE)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             showToast(getString(R.string.cannot_open_file_chooser))
             myWebChromeClient.cancelFileChooser()
         }

@@ -305,7 +305,7 @@ object UrlHandler {
             }
             activity.startActivity(intent)
 
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             Toast.makeText(activity, "No PDF app found", Toast.LENGTH_SHORT).show()
         }
     }

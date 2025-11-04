@@ -6,8 +6,8 @@ A lightweight Android app using WebView to display web content with enhanced fea
 
 ## 🧑‍💻 work on
  - make uploader like chrome
- - make the search view closes when click on screen/webview
- - fix the keyboard shown after switch user agent using toolbar button
+ ~~- make the search view closes when click on screen/webview~~
+ ~~- fix the keyboard shown after switch user agent using toolbar button~~
  - fix virus total website not load in desktop mode
  - fix webview zoom when switching to desktop view
 
