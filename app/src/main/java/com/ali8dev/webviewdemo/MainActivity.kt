@@ -354,6 +354,17 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 override fun onQueryTextChange(newText: String?) = false
             })
         }
+        // Close search view when touching WebView
+        mWebView.setOnTouchListener { _, event ->
+            if (event.action == android.view.MotionEvent.ACTION_DOWN) {
+                if (searchView?.isIconified == false) {
+                    searchView?.isIconified = true
+                    searchItem?.collapseActionView()
+                    return@setOnTouchListener true
+                }
+            }
+            false
+        }
     }
 
     private fun loadUrl(query: String) {
