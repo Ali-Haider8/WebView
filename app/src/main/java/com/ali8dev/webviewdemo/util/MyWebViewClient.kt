@@ -1,9 +1,11 @@
 package com.ali8dev.webviewdemo.util
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import android.net.Uri
 import android.os.Build
 import android.util.Log
 import android.webkit.WebResourceError
@@ -12,6 +14,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
 import com.ali8dev.webviewdemo.MainActivity
+
 
 class MyWebViewClient(
     private val activity: MainActivity, private val context: Context
@@ -24,6 +27,11 @@ class MyWebViewClient(
         if (!isInternetAvailable()) {
             loadNoInternetPage(view)
             return true
+        }
+
+        if (url.contains("captcha") || url.contains("challenge")) {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+            activity.startActivity(intent)
         }
 
         Toast.makeText(context, url, Toast.LENGTH_SHORT).show()
@@ -39,6 +47,11 @@ class MyWebViewClient(
         if (!isInternetAvailable()) {
             loadNoInternetPage(view)
             return true
+        }
+
+        if (url.contains("captcha") || url.contains("challenge")) {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+            activity.startActivity(intent)
         }
 
         return UrlHandler.handleUrl(activity, context, url)
@@ -70,6 +83,17 @@ class MyWebViewClient(
                 // Keep allowBackNavigation = false
             } else {
                 activity.allowBackNavigation = true
+            }
+        }
+
+        url?.let {
+            if (url.contains("virustotal")) {
+                val css = "javascript:(function() { " +
+                        "var style = document.createElement('style'); " +
+                        "style.innerHTML = '.captcha, .g-recaptcha { transform: scale(0.9); margin: 10px; }'; " +
+                        "document.head.appendChild(style); " +
+                        "})()"
+                view!!.loadUrl(css)
             }
         }
 
