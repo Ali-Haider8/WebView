@@ -72,33 +72,39 @@ class MyWebViewClient(
     override fun onPageFinished(view: WebView?, url: String?) {
         activity.mSwipeRefreshLayout.isRefreshing = false
 
-        // Only save URL if it's not the NoInternet page
         if (!url.isNullOrEmpty() && !url.contains("NoInternet") && !url.startsWith("file:///android_asset/")) {
             activity.saveUrl(url)
             activity.setHomepageFromFirstLoad(url)
-
-            // Only re-enable back navigation if we didn't just click home
             if (activity.justClickedHome) {
                 activity.justClickedHome = false
-                // Keep allowBackNavigation = false
             } else {
                 activity.allowBackNavigation = true
             }
         }
 
-        url?.let {
-            if (url.contains("virustotal")) {
-                val css = "javascript:(function() { " +
-                        "var style = document.createElement('style'); " +
-                        "style.innerHTML = '.captcha, .g-recaptcha { transform: scale(0.9); margin: 10px; }'; " +
-                        "document.head.appendChild(style); " +
-                        "})()"
-                view!!.loadUrl(css)
+        // 🔒 Prevent any JavaScript from auto-focusing inputs
+        val blockFocusJS = """
+        (function() {
+            function disableFocus() {
+                const inputs = document.querySelectorAll('input, textarea');
+                inputs.forEach(el => {
+                    if (!el.hasOwnProperty('_focus')) {
+                        el._focus = el.focus;
+                        el.focus = function() {}; // disable JS-triggered focus
+                    }
+                });
             }
-        }
+            disableFocus();
+            // Keep reapplying the patch in case new inputs are added
+            const observer = new MutationObserver(disableFocus);
+            observer.observe(document.body, { childList: true, subtree: true });
+        })();
+    """
+        view?.evaluateJavascript(blockFocusJS, null)
 
         super.onPageFinished(view, url)
     }
+
 
     override fun onReceivedError(
         view: WebView?, request: WebResourceRequest?, error: WebResourceError?
@@ -145,4 +151,6 @@ class MyWebViewClient(
     private fun loadNoInternetPage(view: WebView?) {
         view?.loadUrl("file:///android_asset/NoInternet.html")
     }
+
+
 }

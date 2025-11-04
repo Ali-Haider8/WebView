@@ -17,6 +17,7 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewGroup
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
@@ -88,6 +89,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         hostname = getSavedHomePage() ?: getString(R.string.google)
 
         initializeViews()
+        setupTouchListenersForSearchView()
         setActionBar()
         checkStoragePermission()
 
@@ -195,6 +197,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             mWebView.settings.setSupportZoom(true)
             mWebView.settings.builtInZoomControls = true
             mWebView.settings.displayZoomControls = false
+
+
         } else {
             // Mobile mode settings (default)
             mWebView.settings.userAgentString = WebSettings.getDefaultUserAgent(this@MainActivity)
@@ -208,6 +212,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             mWebView.settings.setSupportZoom(true)
             mWebView.settings.builtInZoomControls = true
             mWebView.settings.displayZoomControls = false
+
+
         }
 //        }
     }
@@ -440,19 +446,82 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         setupWebViewTouchListener(searchItem)
     }
 
-    // Add this new method
     private fun setupWebViewTouchListener(searchItem: MenuItem?) {
         mWebView.setOnTouchListener { _, event ->
+            if (event.action == MotionEvent.ACTION_DOWN || event.action == MotionEvent.ACTION_UP) {
+                // Re-enable focusing only after user interaction
+                val enableFocusJS = """
+                (function() {
+                    const inputs = document.querySelectorAll('input, textarea');
+                    inputs.forEach(el => {
+                        if (el._focus) el.focus = el._focus;
+                    });
+                    // Stop the MutationObserver if it exists
+                    if (window._focusObserver) {
+                        window._focusObserver.disconnect();
+                        window._focusObserver = null;
+                    }
+                })();
+            """
+                mWebView.evaluateJavascript(enableFocusJS, null)
+            }
+
             if (event.action == MotionEvent.ACTION_DOWN) {
-                // If search view is open, close it
                 if (searchView?.isIconified == false) {
                     searchView?.isIconified = true
                     searchItem?.collapseActionView()
                     return@setOnTouchListener true
                 }
             }
+            false
+        }
+    }
+
+    // Add this to your onCreate() method after initializing views
+    private fun setupTouchListenersForSearchView() {
+        // Get the root view
+        val rootView = findViewById<View>(android.R.id.content)
+
+        rootView.setOnTouchListener { _, event ->
+            if (event.action == MotionEvent.ACTION_DOWN) {
+                if (searchView?.isIconified == false) {
+                    searchView?.isIconified = true
+                    val searchItem = mToolbar.menu?.findItem(R.id.action_search)
+                    searchItem?.collapseActionView()
+                    return@setOnTouchListener true
+                }
+            }
             return@setOnTouchListener false
         }
+    }
+
+    override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
+        if (ev?.action == MotionEvent.ACTION_DOWN) {
+            // Get the search view coordinates
+            val searchViewCoords = IntArray(2)
+            searchView?.getLocationOnScreen(searchViewCoords)
+
+            val x = ev.rawX
+            val y = ev.rawY
+
+            // Check if touch is outside search view
+            if (searchView != null && !searchView!!.isIconified) {
+                val searchViewWidth = searchView!!.width
+                val searchViewHeight = searchView!!.height
+
+                // If touch is outside search view bounds
+                if (x < searchViewCoords[0] || x > searchViewCoords[0] + searchViewWidth ||
+                    y < searchViewCoords[1] || y > searchViewCoords[1] + searchViewHeight
+                ) {
+
+                    // Close search view
+                    searchView?.isIconified = true
+                    val searchItem = mToolbar.menu?.findItem(R.id.action_search)
+                    searchItem?.collapseActionView()
+                }
+            }
+        }
+        return super.dispatchTouchEvent(ev)
     }
 
     private fun loadUrl(query: String) {
@@ -629,39 +698,38 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
     }
 
-    @Suppress("DEPRECATION")
     @SuppressLint("SetJavaScriptEnabled")
     private fun setupWebView() {
         mWebView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
             databaseEnabled = true
-
             mediaPlaybackRequiresUserGesture = false
             allowFileAccess = true
             allowContentAccess = true
-
             cacheMode = WebSettings.LOAD_DEFAULT
-
             setSupportZoom(true)
             builtInZoomControls = true
             displayZoomControls = false
             layoutAlgorithm = WebSettings.LayoutAlgorithm.NORMAL
-
             mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
-
             javaScriptCanOpenWindowsAutomatically = true
             setSupportMultipleWindows(true)
             setGeolocationEnabled(true)
-
             setRenderPriority(WebSettings.RenderPriority.HIGH)
         }
 
-        mWebView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+        // 👇 prevent auto keyboard on load
+        mWebView.isFocusable = true
+        mWebView.isFocusableInTouchMode = true
+        mWebView.descendantFocusability = ViewGroup.FOCUS_BLOCK_DESCENDANTS
 
-        // Apply desktop mode settings
+
+
+        mWebView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
         applyDesktopMode()
     }
+
 
     private fun setupSwipeRefreshLayout() {
         mSwipeRefreshLayout.apply {
