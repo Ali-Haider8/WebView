@@ -117,7 +117,10 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         // Setup swipe refresh
         mSwipeRefreshLayout.apply {
             setColorSchemeResources(
-                android.R.color.holo_blue_bright, android.R.color.holo_green_light, android.R.color.holo_orange_light, android.R.color.holo_red_light
+                android.R.color.holo_blue_bright,
+                android.R.color.holo_green_light,
+                android.R.color.holo_orange_light,
+                android.R.color.holo_red_light
             )
             setOnRefreshListener {
                 if (isNetworkAvailable || mWebView.url?.contains("NoInternet") == true) {
@@ -189,21 +192,45 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun isTablet(): Boolean {
-        val screenLayout = resources.configuration.screenLayout and android.content.res.Configuration.SCREENLAYOUT_SIZE_MASK
+        val screenLayout = resources.configuration.screenLayout and
+                android.content.res.Configuration.SCREENLAYOUT_SIZE_MASK
         return screenLayout >= android.content.res.Configuration.SCREENLAYOUT_SIZE_LARGE
     }
 
     private fun applyDesktopMode() {
-        mWebView.settings.apply {
-            if (isDesktopMode) {
-                userAgentString = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " + "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-            } else {
-                userAgentString = WebSettings.getDefaultUserAgent(this@MainActivity)
+        if (isDesktopMode) {
+            // Desktop mode settings
+            mWebView.settings.apply {
+                userAgentString = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
+                        "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                useWideViewPort = true
+                loadWithOverviewMode = true
             }
-            useWideViewPort = true
-            loadWithOverviewMode = true
+
+            // Calculate appropriate zoom level for desktop view
+            val displayMetrics = resources.displayMetrics
+            val screenWidth = displayMetrics.widthPixels
+            val density = displayMetrics.density
+
+            // Calculate zoom to fit desktop width on screen
+            // Assumes typical desktop page width of 1024-1280px
+            val desktopWidth = 1200f
+            val scale = ((screenWidth / density) / desktopWidth * 100).toInt()
+
+            // Constrain zoom between 40% and 100% for readability
+            val finalScale = scale.coerceIn(40, 100)
+            mWebView.setInitialScale(finalScale)
+
+        } else {
+            // Mobile mode settings (default)
+            mWebView.settings.apply {
+                userAgentString = WebSettings.getDefaultUserAgent(this@MainActivity)
+                useWideViewPort = true
+                loadWithOverviewMode = true
+            }
+            // Reset scale for mobile - let WebView decide
+            mWebView.setInitialScale(0)
         }
-        mWebView.setInitialScale(0)
     }
 
     private fun toggleDesktopMode() {
@@ -213,7 +240,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         updateDesktopModeMenuItem()
         mWebView.reload()
 
-        val message = if (isDesktopMode) "Desktop mode enabled" else "Desktop mode disabled"
+        val message = if (isDesktopMode) "Desktop mode enabled" else "Mobile mode enabled"
         showToast(message)
     }
 
@@ -252,7 +279,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 }
             }
 
-            val networkRequest = NetworkRequest.Builder().addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET).build()
+            val networkRequest = NetworkRequest.Builder()
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                .build()
 
             connectivityManager?.registerNetworkCallback(networkRequest, networkCallback!!)
         }
@@ -268,7 +297,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             val network = cm.activeNetwork ?: return false
             val capabilities = cm.getNetworkCapabilities(network) ?: return false
-            capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) && capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+            capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+                    capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
         } else {
             @Suppress("DEPRECATION") cm.activeNetworkInfo?.isConnected ?: false
         }
@@ -290,7 +320,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         navigationView.setNavigationItemSelectedListener(this)
 
         val toggle = ActionBarDrawerToggle(
-            this, mDrawerLayout, mToolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close
+            this, mDrawerLayout, mToolbar,
+            R.string.navigation_drawer_open,
+            R.string.navigation_drawer_close
         )
         mDrawerLayout.addDrawerListener(toggle)
         toggle.syncState()
@@ -302,11 +334,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             R.id.nav_privacy_policy -> showTextDialog(
                 getString(R.string.privacy_policy), "privacy_policy.txt"
             )
-
             R.id.nav_terms_service -> showTextDialog(
                 getString(R.string.terms_and_conditions), "terms_and_conditions.txt"
             )
-
             R.id.nav_settings -> showToast(getString(R.string.settings))
             R.id.nav_about -> showToast(getString(R.string.about))
             else -> return false
@@ -390,7 +420,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 toggleDesktopMode()
                 true
             }
-
             R.id.action_refresh -> {
                 if (isNetworkAvailable || mWebView.url?.contains("NoInternet") == true) {
                     mWebView.reload()
@@ -399,17 +428,14 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 }
                 true
             }
-
             R.id.action_share -> {
                 shareCurrentPage()
                 true
             }
-
             R.id.action_exit -> {
                 finish()
                 true
             }
-
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -434,10 +460,10 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             override fun handleOnBackPressed() {
                 when {
                     searchView?.isIconified == false -> searchView?.isIconified = true
-                    mDrawerLayout.isDrawerOpen(GravityCompat.START) -> mDrawerLayout.closeDrawer(GravityCompat.START)
-
-                    myWebChromeClient.customView != null -> myWebChromeClient.onHideCustomView()
-
+                    mDrawerLayout.isDrawerOpen(GravityCompat.START) ->
+                        mDrawerLayout.closeDrawer(GravityCompat.START)
+                    myWebChromeClient.customView != null ->
+                        myWebChromeClient.onHideCustomView()
                     mWebView.canGoBack() -> mWebView.goBack()
                     else -> finish()
                 }
@@ -479,12 +505,13 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
         when (requestCode) {
-            PermissionUtil.MY_PERMISSIONS_REQUEST_DOWNLOAD -> DownloadHandler.handlePermissionResult(this, grantResults)
-
-            PermissionUtil.MY_PERMISSIONS_REQUEST_SMS -> UrlHandler.handleSmsPermissionResult(this, grantResults)
-
+            PermissionUtil.MY_PERMISSIONS_REQUEST_DOWNLOAD ->
+                DownloadHandler.handlePermissionResult(this, grantResults)
+            PermissionUtil.MY_PERMISSIONS_REQUEST_SMS ->
+                UrlHandler.handleSmsPermissionResult(this, grantResults)
             FileChooserHelper.CAMERA_PERMISSION_REQUEST_CODE -> {
-                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                if (grantResults.isNotEmpty() &&
+                    grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     openFileChooser(FileChooserHelper.getPendingFileChooserParams())
                 } else {
                     showToast("Camera permission denied")
@@ -495,13 +522,16 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun checkStoragePermission() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q && ContextCompat.checkSelfPermission(
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q &&
+            ContextCompat.checkSelfPermission(
                 this,
                 Manifest.permission.WRITE_EXTERNAL_STORAGE
             ) != PackageManager.PERMISSION_GRANTED
         ) {
             ActivityCompat.requestPermissions(
-                this, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), STORAGE_PERMISSION_CODE
+                this,
+                arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                STORAGE_PERMISSION_CODE
             )
         }
     }
@@ -516,7 +546,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun getLastUrl(): String? {
-        return getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getString(KEY_LAST_URL, null)
+        return getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getString(KEY_LAST_URL, null)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {

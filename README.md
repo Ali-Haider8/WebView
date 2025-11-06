@@ -10,6 +10,10 @@ A lightweight Android app using WebView to display web content with enhanced fea
  ~~- fix the keyboard shown after switch user agent using toolbar button~~
  - fix virus total website not load in desktop mode
  - fix webview zoom when switching to desktop view
+ - make new designs of MainActivity layout that:
+   - toolbar title in center + home button in left + floating button for nav menu drawer
+   - back button in toolbar when not home page + floating button for nav menu drawer
+   - 
 
 ## ✅ Current Features
 - Full-screen YouTube video support  
@@ -80,8 +84,7 @@ A lightweight Android app using WebView to display web content with enhanced fea
 
 ### 📄 Legal Pages
 - Privacy Policy  
-- Terms of Use  
-- Copyrights  
+- Terms of Use
 
 ### 🧹 Code Quality
 - Simplify and clean up code for easier updates  
