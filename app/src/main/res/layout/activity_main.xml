@@ -5,9 +5,10 @@
     android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
     android:layoutDirection="ltr"
     tools:context=".MainActivity"
-    tools:openDrawer="end">
+    tools:openDrawer="start">
 
     <!-- Main Content - Single root view -->
     <LinearLayout
@@ -21,7 +22,6 @@
             android:layout_height="wrap_content"
             android:background="?attr/colorPrimary"
             android:elevation="10dp"
-            android:fitsSystemWindows="true"
             android:minHeight="?attr/actionBarSize"
             android:theme="@style/ToolbarTheme"
             app:layout_collapseMode="pin"

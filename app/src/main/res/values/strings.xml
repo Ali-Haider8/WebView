@@ -20,4 +20,8 @@
     <string name="search">Search</string>
     <string name="terms_of_service">Terms Of Service</string>
     <string name="tg_ali_haider_8">tg: ali_haider_8</string>
+    <!-- New Splash Screen Strings -->
+    <string name="checking_connection">Checking connection...</string>
+    <string name="loading">Loading...</string>
+    <string name="retry">Retry</string>
 </resources>

@@ -1,19 +1,24 @@
 <resources>
 
     <style name="Theme.WebView" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="colorPrimary">#6200EE</item>
-        <item name="colorPrimaryDark">#3700B3</item>
-        <item name="colorAccent">#03DAC5</item>
         <item name="colorOnPrimary">@android:color/white</item>
         <item name="android:windowBackground">#FFFFFF</item>
         <item name="colorOnBackground">#000000</item>
-        <item name="android:statusBarColor">#3700B3</item>
+        <item name="android:statusBarColor">@color/colorPrimaryDark</item>
     </style>
 
     <!-- Toolbar Theme for Light Mode -->
     <style name="ToolbarTheme" parent="ThemeOverlay.MaterialComponents.Dark.ActionBar">
         <item name="colorControlNormal">@android:color/white</item>
         <item name="titleTextColor">@android:color/white</item>
+    </style>
+
+    <!-- Splash Screen Theme -->
+    <style name="SplashTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:windowBackground">?attr/colorPrimary</item>
+        <item name="android:statusBarColor">?attr/colorPrimary</item>
+        <item name="android:navigationBarColor">@android:color/white</item>
+        <item name="android:windowFullscreen">false</item>
     </style>
 
     <!-- Popup/Menu Theme for Light Mode -->
