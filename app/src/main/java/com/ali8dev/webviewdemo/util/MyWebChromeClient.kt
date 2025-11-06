@@ -2,14 +2,14 @@ package com.ali8dev.webviewdemo.util
 
 import android.content.pm.ActivityInfo
 import android.net.Uri
+import android.os.Build
 import android.os.Message
 import android.util.Log
 import android.view.View
-import android.view.ViewGroup
+import android.view.WindowManager
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebView
-import android.widget.FrameLayout
 import com.ali8dev.webviewdemo.MainActivity
 
 @Suppress("DEPRECATION")
@@ -32,19 +32,30 @@ class MyWebChromeClient(private val activity: MainActivity) : WebChromeClient() 
         customView = view
         customViewCallback = callback
 
+        // Save original orientation and UI visibility
+        originalOrientation = activity.requestedOrientation
+        originalSystemUiVisibility = activity.window.decorView.systemUiVisibility
+
+        // Hide action bar first
+        activity.supportActionBar?.hide()
+
+        // Hide the WebView and toolbar
+        activity.mWebView.visibility = View.GONE
+        activity.mToolbar.visibility = View.GONE
+
+        // Set fullscreen flags BEFORE adding view
+        activity.window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+        activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+
+        // Hide system UI
+        hideSystemUI()
+
         // Set screen orientation to landscape
         activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-
-
-        // Hide the WebView
-        activity.mWebView.visibility = View.GONE
 
         // Show fullscreen container
         activity.mFrameLayout.visibility = View.VISIBLE
         activity.mFrameLayout.addView(customView)
-
-        // Hide action bar if present
-        activity.supportActionBar?.hide()
     }
 
     override fun onHideCustomView() {
@@ -52,22 +63,65 @@ class MyWebChromeClient(private val activity: MainActivity) : WebChromeClient() 
             return
         }
 
-        // Set screen orientation back to portrait
-        activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-
-
         // Hide fullscreen container
         activity.mFrameLayout.visibility = View.GONE
         activity.mFrameLayout.removeView(customView)
         customView = null
 
-        // Show the WebView again
+        // Show the WebView and toolbar again
         activity.mWebView.visibility = View.VISIBLE
+        activity.mToolbar.visibility = View.VISIBLE
 
-        // Show action bar if present
+        // Show action bar
         activity.supportActionBar?.show()
 
+        // Clear fullscreen flags
+        activity.window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+        activity.window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+
+        // Restore screen orientation
+        activity.requestedOrientation = originalOrientation
+
+        // Show system UI again
+        showSystemUI()
+
         customViewCallback?.onCustomViewHidden()
+    }
+
+    private fun hideSystemUI() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            // Android 11 and above
+            activity.window.setDecorFitsSystemWindows(false)
+            activity.window.insetsController?.apply {
+                hide(android.view.WindowInsets.Type.statusBars() or android.view.WindowInsets.Type.navigationBars())
+                systemBarsBehavior = android.view.WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            }
+        } else {
+            // Android 10 and below
+            @Suppress("DEPRECATION")
+            activity.window.decorView.systemUiVisibility = (
+                    View.SYSTEM_UI_FLAG_FULLSCREEN
+                            or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                            or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                            or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                            or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                            or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                            or View.SYSTEM_UI_FLAG_LOW_PROFILE)
+        }
+    }
+
+    private fun showSystemUI() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            // Android 11 and above
+            activity.window.setDecorFitsSystemWindows(true)
+            activity.window.insetsController?.show(
+                android.view.WindowInsets.Type.statusBars() or android.view.WindowInsets.Type.navigationBars()
+            )
+        } else {
+            // Android 10 and below
+            @Suppress("DEPRECATION")
+            activity.window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
+        }
     }
 
     override fun onProgressChanged(view: WebView?, newProgress: Int) {
