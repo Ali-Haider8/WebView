@@ -31,6 +31,7 @@ import androidx.core.content.edit
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import com.ali8dev.webviewdemo.database.FavoriteDatabase
 import com.ali8dev.webviewdemo.util.AlertDialog
 import com.ali8dev.webviewdemo.util.DownloadHandler
 import com.ali8dev.webviewdemo.util.FileChooserHelper
@@ -61,8 +62,12 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     // State
     private var isDesktopMode = false
     private var desktopModeMenuItem: MenuItem? = null
+    private var favoriteMenuItem: MenuItem? = null
     var isNetworkAvailable = true
         private set
+
+    // Database
+    private lateinit var favoriteDatabase: FavoriteDatabase
 
     // Network monitoring
     private var connectivityManager: ConnectivityManager? = null
@@ -75,7 +80,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         private const val PREFS_NAME = "WebViewPrefs"
         private const val KEY_LAST_URL = "last_url"
         private const val KEY_DESKTOP_MODE = "desktop_mode"
-        private const val DEFAULT_URL = "youtube.com"
+        private const val DEFAULT_URL = "https://google.com/"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -90,11 +95,31 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         setupBackPressHandler()
         checkStoragePermission()
 
+        // Initialize favorites database
+        favoriteDatabase = FavoriteDatabase(this)
+
         // Load content
         if (savedInstanceState != null) {
             mWebView.restoreState(savedInstanceState)
         } else {
-            loadInitialUrl()
+            // Check if coming from FavoritesActivity
+            val urlFromFavorites = intent.getStringExtra(FavoritesActivity.EXTRA_URL)
+            if (urlFromFavorites != null) {
+                mWebView.loadUrl(urlFromFavorites)
+            } else {
+                loadInitialUrl()
+            }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+
+        // Handle URL from favorites
+        val urlFromFavorites = intent.getStringExtra(FavoritesActivity.EXTRA_URL)
+        if (urlFromFavorites != null) {
+            mWebView.loadUrl(urlFromFavorites)
         }
     }
 
@@ -183,7 +208,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         val isFirstRun = !prefs.contains(KEY_DESKTOP_MODE)
 
         isDesktopMode = if (isFirstRun && isTablet()) {
-            // First time on tablet - enable desktop mode by default
             saveDesktopModePreference(true)
             true
         } else {
@@ -200,55 +224,46 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     @SuppressLint("SetJavaScriptEnabled")
     private fun applyDesktopMode() {
         val settings = mWebView.settings
-        val urlToReload = mWebView.url // Get the current URL BEFORE changing settings
+        val urlToReload = mWebView.url
 
         if (isDesktopMode) {
-            // Desktop user-agent
             settings.userAgentString =
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
                         "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
             settings.useWideViewPort = true
             settings.loadWithOverviewMode = true
-            settings.setSupportZoom(true) // Keep zoom enabled for good UX
+            settings.setSupportZoom(true)
             settings.builtInZoomControls = true
             settings.displayZoomControls = false
 
         } else {
-            // Mobile defaults
             settings.userAgentString = WebSettings.getDefaultUserAgent(this)
             settings.useWideViewPort = false
-            settings.loadWithOverviewMode = true // Still true for mobile to fit content
+            settings.loadWithOverviewMode = true
             settings.setSupportZoom(true)
             settings.builtInZoomControls = true
             settings.displayZoomControls = false
             mWebView.setInitialScale(0)
         }
 
-        // --- THIS IS THE NEW, AGGRESSIVE RESET ---
-
-        // 1. Aggressively clear all stored states
         mWebView.clearCache(true)
         mWebView.clearFormData()
         mWebView.clearHistory()
         mWebView.clearSslPreferences()
 
-        // 2. Force a fresh load of the URL. This is more reliable than reload().
         if (!urlToReload.isNullOrEmpty() && urlToReload != "about:blank") {
             mWebView.loadUrl(urlToReload)
         } else {
-            // Fallback to the default URL if there's no current one
             mWebView.loadUrl(DEFAULT_URL)
         }
     }
 
-
     private fun toggleDesktopMode() {
         isDesktopMode = !isDesktopMode
         saveDesktopModePreference(isDesktopMode)
-        applyDesktopMode() // <-- This function already reloads the page
+        applyDesktopMode()
         updateDesktopModeMenuItem()
-        // mWebView.reload() // <-- Remove this line
 
         val message = if (isDesktopMode) "Desktop mode enabled" else "Mobile mode enabled"
         showToast(message)
@@ -296,7 +311,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             connectivityManager?.registerNetworkCallback(networkRequest, networkCallback!!)
         }
 
-        // Initial check
         isNetworkAvailable = checkInternetConnection()
     }
 
@@ -341,6 +355,10 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.nav_home -> mWebView.loadUrl(DEFAULT_URL)
+            R.id.nav_favorites -> {
+                val intent = Intent(this, FavoritesActivity::class.java)
+                startActivity(intent)
+            }
             R.id.nav_privacy_policy -> showTextDialog(
                 getString(R.string.privacy_policy), "privacy_policy.txt"
             )
@@ -375,7 +393,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         menuInflater.inflate(R.menu.toolbar_menu, menu)
         setupSearchView(menu)
         desktopModeMenuItem = menu?.findItem(R.id.action_desktop_mode)
+        favoriteMenuItem = menu?.findItem(R.id.action_favorite)
         updateDesktopModeMenuItem()
+        updateFavoriteMenuItem()
         return true
     }
 
@@ -396,7 +416,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 override fun onQueryTextChange(newText: String?) = false
             })
         }
-        // Close search view when touching WebView
+
         mWebView.setOnTouchListener { _, event ->
             if (event.action == android.view.MotionEvent.ACTION_DOWN) {
                 if (searchView?.isIconified == false) {
@@ -426,6 +446,10 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
+            R.id.action_favorite -> {
+                toggleFavorite()
+                true
+            }
             R.id.action_desktop_mode -> {
                 toggleDesktopMode()
                 true
@@ -448,6 +472,52 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             }
             else -> super.onOptionsItemSelected(item)
         }
+    }
+
+    private fun toggleFavorite() {
+        val currentUrl = mWebView.url
+        val currentTitle = mWebView.title
+
+        if (currentUrl.isNullOrEmpty() || currentUrl.contains("NoInternet") ||
+            currentUrl.startsWith("file:///android_asset/")) {
+            showToast(getString(R.string.no_page_to_share))
+            return
+        }
+
+        if (favoriteDatabase.isFavorite(currentUrl)) {
+            favoriteDatabase.removeFavorite(currentUrl)
+            showToast(getString(R.string.favorite_removed))
+        } else {
+            val title = currentTitle ?: "Untitled"
+            favoriteDatabase.addFavorite(title, currentUrl)
+            showToast(getString(R.string.favorite_added))
+        }
+
+        updateFavoriteMenuItem()
+    }
+
+    private fun updateFavoriteMenuItem() {
+        val currentUrl = mWebView.url ?: return
+
+        if (currentUrl.contains("NoInternet") || currentUrl.startsWith("file:///android_asset/")) {
+            favoriteMenuItem?.isVisible = false
+            return
+        }
+
+        favoriteMenuItem?.isVisible = true
+
+        if (favoriteDatabase.isFavorite(currentUrl)) {
+            favoriteMenuItem?.setIcon(R.drawable.ic_star)
+            favoriteMenuItem?.title = getString(R.string.remove_from_favorites)
+        } else {
+            favoriteMenuItem?.setIcon(R.drawable.ic_star_border)
+            favoriteMenuItem?.title = getString(R.string.add_to_favorites)
+        }
+    }
+
+    override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
+        updateFavoriteMenuItem()
+        return super.onPrepareOptionsMenu(menu)
     }
 
     private fun shareCurrentPage() {
@@ -481,7 +551,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         })
     }
 
-    // File chooser support
     @Suppress("DEPRECATION")
     fun openFileChooser(fileChooserParams: WebChromeClient.FileChooserParams?) {
         try {
@@ -546,7 +615,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
     }
 
-    // Save/restore state
     fun saveUrl(url: String) {
         if (!url.contains("NoInternet") && !url.startsWith("file:///android_asset/")) {
             getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit {
@@ -577,12 +645,14 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     override fun onResume() {
         super.onResume()
         mWebView.onResume()
+        updateFavoriteMenuItem()
     }
 
     override fun onDestroy() {
         super.onDestroy()
         myWebChromeClient.cancelFileChooser()
         networkCallback?.let { connectivityManager?.unregisterNetworkCallback(it) }
+        favoriteDatabase.close()
         mWebView.apply {
             stopLoading()
             destroy()

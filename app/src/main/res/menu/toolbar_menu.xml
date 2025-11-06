@@ -10,6 +10,12 @@
         app:showAsAction="ifRoom|collapseActionView" />
 
     <item
+        android:id="@+id/action_favorite"
+        android:icon="@drawable/ic_star_border"
+        android:title="@string/add_to_favorites"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/action_desktop_mode"
         android:checkable="true"
         android:title="Desktop site"

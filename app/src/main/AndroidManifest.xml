@@ -5,7 +5,9 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <!-- ... other permissions ... -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
 
     <application
         android:allowBackup="true"
@@ -21,7 +23,7 @@
         android:theme="@style/Theme.WebView"
         android:usesCleartextTraffic="true">
 
-        <!-- FileProvider remains the same -->
+        <!-- FileProvider -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -32,7 +34,7 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
-        <!-- Splash Activity - NOW THE LAUNCHER -->
+        <!-- Splash Activity - LAUNCHER -->
         <activity
             android:name=".SplashActivity"
             android:exported="true"
@@ -44,7 +46,7 @@
             </intent-filter>
         </activity>
 
-        <!-- Main Activity - NO LONGER LAUNCHER -->
+        <!-- Main Activity -->
         <activity
             android:name=".MainActivity"
             android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize"
@@ -52,6 +54,15 @@
             android:launchMode="singleTask"
             android:screenOrientation="fullSensor"
             android:windowSoftInputMode="adjustPan|adjustResize" />
+
+        <!-- Favorites Activity -->
+        <activity
+            android:name=".FavoritesActivity"
+            android:exported="false"
+            android:label="@string/favorites"
+            android:parentActivityName=".MainActivity"
+            android:screenOrientation="fullSensor" />
+
     </application>
 
 </manifest>

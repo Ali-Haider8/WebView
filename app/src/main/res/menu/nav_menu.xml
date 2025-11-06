@@ -14,6 +14,10 @@
                     android:icon="@drawable/home"
                     android:title="@string/home" />
                 <item
+                    android:id="@+id/nav_favorites"
+                    android:icon="@drawable/favorite"
+                    android:title="@string/favorites" />
+                <item
                     android:id="@+id/nav_privacy_policy"
                     android:icon="@drawable/padlock"
                     android:title="@string/privacy_policy" />
