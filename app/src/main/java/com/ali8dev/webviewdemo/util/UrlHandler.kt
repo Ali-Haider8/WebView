@@ -164,12 +164,12 @@ object UrlHandler {
                 } else null
             }
 
-            host.contains("youtube.com") || host.contains("youtu.be") -> {
-                if (pathSegments.size >= 2 && (pathSegments[0] == "user" || pathSegments[0] == "channel")) {
-                    pathSegments[1]
-                    "vnd.youtube://www.youtube.com/${uri.path}".toUri()
-                } else null
-            }
+//            host.contains("youtube.com") || host.contains("youtu.be") -> {
+//                if (pathSegments.size >= 2 && (pathSegments[0] == "user" || pathSegments[0] == "channel")) {
+//                    pathSegments[1]
+//                    "vnd.youtube://www.youtube.com/${uri.path}".toUri()
+//                } else null
+//            }
 
             host.contains("tiktok.com") -> {
                 if (pathSegments.isNotEmpty() && pathSegments[0].startsWith("@")) {
@@ -231,7 +231,7 @@ object UrlHandler {
             host.contains("facebook.com") || host.contains("fb.me") -> "com.facebook.katana"
             host.contains("twitter.com") || host.contains("x.com") -> "com.twitter.android"
             host.contains("whatsapp.com") || host.contains("wa.me") -> "com.whatsapp"
-            host.contains("youtube.com") || host.contains("youtu.be") -> "com.google.android.youtube"
+//            host.contains("youtube.com") || host.contains("youtu.be") -> "com.google.android.youtube"
             host.contains("tiktok.com") -> "com.zhiliaoapp.musically"  // or "com.ss.android.ugc.aweme" for some regions
             host.contains("pinterest.com") -> "com.pinterest"
             host.contains("linkedin.com") -> "com.linkedin.android"

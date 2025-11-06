@@ -48,7 +48,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     lateinit var mWebView: WebView
     lateinit var mFrameLayout: FrameLayout
     lateinit var mProgressBar: ProgressBar
-    private lateinit var mToolbar: Toolbar
+    lateinit var mToolbar: Toolbar
     lateinit var mSwipeRefreshLayout: SwipeRefreshLayout
     private lateinit var mDrawerLayout: DrawerLayout
     private lateinit var navigationView: NavigationView
@@ -75,7 +75,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         private const val PREFS_NAME = "WebViewPrefs"
         private const val KEY_LAST_URL = "last_url"
         private const val KEY_DESKTOP_MODE = "desktop_mode"
-        private const val DEFAULT_URL = "https://www.google.com"
+        private const val DEFAULT_URL = "youtube.com"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

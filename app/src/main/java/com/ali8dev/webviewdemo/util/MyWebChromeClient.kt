@@ -24,52 +24,50 @@ class MyWebChromeClient(private val activity: MainActivity) : WebChromeClient() 
     var filePathCallback: ValueCallback<Array<Uri>>? = null
 
     override fun onShowCustomView(view: View?, callback: CustomViewCallback?) {
-        Log.d("WebChrome", "onShowCustomView called")
-
         if (customView != null) {
-            Log.d("WebChrome", "customView already exists, hiding it")
             onHideCustomView()
             return
         }
 
         customView = view
         customViewCallback = callback
-        originalOrientation = activity.requestedOrientation
-        originalSystemUiVisibility = activity.window.decorView.systemUiVisibility
 
-        Log.d("WebChrome", "Hiding WebView and Toolbar")
+        // Set screen orientation to landscape
+        activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+
+
+        // Hide the WebView
         activity.mWebView.visibility = View.GONE
 
-        Log.d("WebChrome", "Showing fullscreen container")
+        // Show fullscreen container
         activity.mFrameLayout.visibility = View.VISIBLE
-        activity.mFrameLayout.addView(
-            customView, FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT
-            )
-        )
+        activity.mFrameLayout.addView(customView)
 
-        Log.d("WebChrome", "Setting fullscreen flags")
-        activity.window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_FULLSCREEN
-                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY)
-
-        Log.d("WebChrome", "Setting landscape orientation")
-        activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        // Hide action bar if present
+        activity.supportActionBar?.hide()
     }
 
     override fun onHideCustomView() {
-        if (customView == null) return
+        if (customView == null) {
+            return
+        }
 
-        activity.mFrameLayout.removeView(customView)
+        // Set screen orientation back to portrait
+        activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+
+
+        // Hide fullscreen container
         activity.mFrameLayout.visibility = View.GONE
+        activity.mFrameLayout.removeView(customView)
+        customView = null
+
+        // Show the WebView again
         activity.mWebView.visibility = View.VISIBLE
 
-        activity.window.decorView.systemUiVisibility = originalSystemUiVisibility
-        activity.requestedOrientation = originalOrientation
+        // Show action bar if present
+        activity.supportActionBar?.show()
 
-        customView = null
         customViewCallback?.onCustomViewHidden()
-        customViewCallback = null
     }
 
     override fun onProgressChanged(view: WebView?, newProgress: Int) {
