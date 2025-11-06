@@ -1,32 +1,50 @@
-# Android WebView App
+# 🌐 Android WebView App
 
-A lightweight Android app using WebView to display web content with enhanced features and native integrations.
+A lightweight, feature-rich Android app built with Kotlin that wraps web content in a native WebView interface. Designed for smooth browsing, file handling, and enhanced user experience with modern UI components.
 
 ---
-
-## 🧑‍💻 work on
- - make uploader like chrome
--  ~~make the search view closes when click on screen/webview~~
- - ~~fix the keyboard shown after switch user agent using toolbar button~~
- - fix virus total website not load in desktop mode
- - ~~fix webview zoom when switching to desktop view~~
- - make new designs of MainActivity layout that:
-   - toolbar title in center + home button in left + floating button for nav menu drawer
-   - back button in toolbar when not home page + floating button for nav menu drawer
-   - 
 
 ## ✅ Current Features
-- Full-screen YouTube video support  
-- Social media links open in external apps  
-- File downloads supported  
-- Swipe-to-refresh functionality  
-- Horizontal progress bar  
-- Toolbar with app name and share button  
-- File upload support in WebView  
+
+- Full-screen YouTube video support
+- External app handling for social media links
+- File downloads with custom download handler
+- File upload support in WebView
+- Swipe-to-refresh functionality
+- Horizontal progress bar for page loading
+- Toolbar with centered title, share button, and back navigation
 - Alert dialog for user feedback
-- Download Handler
+- Splash screen with globe icon
+- Navigation drawer with:
+    - Home
+    - Privacy Policy
+    - Terms of Service
+    - Settings
+    - About
+- Language support: Arabic and English
+- Responsive layout for mobile and tablet screens
+- Desktop mode toggle with user agent switching
+- Persistent URL saving and restoration
+- Improved layout with floating action button for drawer toggle
+- Zoom and keyboard fixes for desktop mode
+- Favorite page integration
 
 ---
+
+## 🧠 Work in Progress
+
+- Chrome-style file uploader
+- Auto-close search view on WebView tap
+- Fix for VirusTotal loading in desktop mode
+- Refined zoom behavior when switching modes
+- Enhanced toolbar layout:
+    - Home button on left
+    - Centered title
+    - Back button when not on home
+    - Floating drawer toggle
+
+---
+
 ## 📸 Screenshots
 
 <table style="width: 100%; background-color: #f0f0f0; border-collapse: collapse;">
@@ -52,54 +70,45 @@ A lightweight Android app using WebView to display web content with enhanced fea
   </tr>
 </table>
 
+---
 
-## 🚧 Upcoming Features
+## 🚀 Planned Features
 
-### 🧭 Toolbar Enhancements
-- Menu button with additional options  
-
-### 📂 Navigation Drawer
-- About the app  
-- Webpage URL shortcut  
-- Social media buttons  
-
-### 🌐 WebView Improvements
-- Smoother page loading (Chrome-like)  
-- Splash screen with internet check  
-- Offline page when no connection  
-- Save and restore last visited URL  
-
-### 🎨 UI & UX
-- Light and dark theme support  
-- English and Arabic language support  
-- Responsive design for tablets and small screens  
-
-### 📱 Compatibility
-- Test across different Android versions  
-
-### 🔔 Integrations
-- OneSignal notifications  
-- Firebase Analytics  
-- AdMob ads  
-
-### 📄 Legal Pages
-- Privacy Policy  
-- Terms of Use
-
-### 🧹 Code Quality
-- Simplify and clean up code for easier updates  
+- Offline page when no internet
+- OneSignal push notifications
+- Firebase Analytics integration
+- AdMob banner and interstitial ads
+- Legal pages: Privacy Policy, Terms of Use
+- Code cleanup and modularization
 
 ---
 
-### 📂 Navigation Drawer
-Shows sidebar menu with sections for General and Application, including Privacy Policy, Terms of Service, Settings, and About.
+## 🛠 Tech Stack
 
-### 🌐 WebView Interface
-Displays Google homepage inside WebView with Arabic and Kurdish language options, search bar, and dark theme toggle.
-
-### 🚀 Splash Screen
-Simple splash screen with a globe icon, indicating the app is loading or checking internet connection.
+- **Language:** Kotlin
+- **UI:** XML layouts with Material Design
+- **Build System:** Gradle (KTS)
+- **Compatibility:** Android 6.0+
+- **Libraries:** WebView, AndroidX, Firebase (planned)
 
 ---
 
-Let me know if you’d like to add setup instructions, contributor guidelines, or license info next!
+## 📂 Project Structure
+WebView/
+├── app/                 # Main application source code
+├── gradle/              # Build scripts
+├── build.gradle.kts     # Project build configuration
+├── settings.gradle.kts  # Module settings
+└── README.md            # Project overview
+
+---
+
+## 🤝 Contributing
+
+Feel free to fork, submit pull requests, or open issues. Feedback and collaboration are welcome!
+
+---
+
+## 📄 License
+
+This project is open-source. License details coming soon.
