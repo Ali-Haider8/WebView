@@ -47,28 +47,10 @@ A lightweight, feature-rich Android app built with Kotlin that wraps web content
 
 ## 📸 Screenshots
 
-<table style="width: 100%; background-color: #f0f0f0; border-collapse: collapse;">
-  <tr>
-    <td style="padding: 20px; border-right: 2px solid #ccc;">
-      <div style="text-align: center;">
-        <img src="https://i.vgy.me/y8OJaC.jpg" alt="Navigation Drawer" style="border: 4px solid #555; border-radius: 6px; width: 180px;"><br><br>
-        <strong>Screenshot 1:</strong><br>Navigation Drawer with Privacy, Terms, Settings, and About.
-      </div>
-    </td>
-    <td style="padding: 20px; border-right: 2px solid #ccc;">
-      <div style="text-align: center;">
-        <img src="https://i.vgy.me/GCtGmR.jpg" alt="WebView Interface" style="border: 4px solid #555; border-radius: 6px; width: 180px;"><br><br>
-        <strong>Screenshot 2:</strong><br>WebView showing Google homepage with Arabic/Kurdish options.
-      </div>
-    </td>
-    <td style="padding: 20px;">
-      <div style="text-align: center;">
-        <img src="https://i.vgy.me/MotEFk.jpg" alt="Splash Screen" style="border: 4px solid #555; border-radius: 6px; width: 180px;"><br><br>
-        <strong>Screenshot 3:</strong><br>Splash screen with globe icon and clean layout.
-      </div>
-    </td>
-  </tr>
-</table>
+| Screenshot 1 | Screenshot 2 | Screenshot 3 |
+|--------------|--------------|--------------|
+| <img src="https://i.vgy.me/y8OJaC.jpg" width="180" style="border:2px solid gray;"> | <img src="https://i.vgy.me/GCtGmR.jpg" width="180" style="border:2px solid gray;"> | <img src="https://i.vgy.me/MotEFk.jpg" width="180" style="border:2px solid gray;"> |
+| Navigation Drawer with Privacy, Terms, Settings, and About | WebView showing Google homepage with Arabic/Kurdish options | Splash screen with globe icon and clean layout |
 
 ---
 
@@ -92,14 +74,13 @@ A lightweight, feature-rich Android app built with Kotlin that wraps web content
 - **Libraries:** WebView, AndroidX, Firebase (planned)
 
 ---
-
 ## 📂 Project Structure
-WebView/
-├── app/                 # Main application source code
-├── gradle/              # Build scripts
-├── build.gradle.kts     # Project build configuration
-├── settings.gradle.kts  # Module settings
-└── README.md            # Project overview
+
+- **app/** → Main application source code (activities, fragments, WebView logic)
+- **gradle/** → Build scripts and Gradle wrapper files
+- **build.gradle.kts** → Project build configuration in Kotlin DSL
+- **settings.gradle.kts** → Module settings and Gradle project linking
+- **README.md** → Project overview and documentation
 
 ---
 
