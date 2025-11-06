@@ -50,12 +50,8 @@
         </provider>
 
         <activity
-            android:name=".webview"
-            android:exported="false" />
-
-        <activity
             android:name=".MainActivity"
-            android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize"
+            android:configChanges="keyboard|keyboardHidden"
             android:exported="true"
             android:launchMode="singleTask"
             android:screenOrientation="fullSensor"

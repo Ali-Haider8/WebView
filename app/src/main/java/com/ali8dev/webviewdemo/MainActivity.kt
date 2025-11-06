@@ -197,48 +197,58 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         return screenLayout >= android.content.res.Configuration.SCREENLAYOUT_SIZE_LARGE
     }
 
+    @SuppressLint("SetJavaScriptEnabled")
     private fun applyDesktopMode() {
+        val settings = mWebView.settings
+        val urlToReload = mWebView.url // Get the current URL BEFORE changing settings
+
         if (isDesktopMode) {
-            // Desktop mode settings
-            mWebView.settings.apply {
-                userAgentString = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
+            // Desktop user-agent
+            settings.userAgentString =
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
                         "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-                useWideViewPort = true
-                loadWithOverviewMode = true
-            }
 
-            // Calculate appropriate zoom level for desktop view
-            val displayMetrics = resources.displayMetrics
-            val screenWidth = displayMetrics.widthPixels
-            val density = displayMetrics.density
-
-            // Calculate zoom to fit desktop width on screen
-            // Assumes typical desktop page width of 1024-1280px
-            val desktopWidth = 1200f
-            val scale = ((screenWidth / density) / desktopWidth * 100).toInt()
-
-            // Constrain zoom between 40% and 100% for readability
-            val finalScale = scale.coerceIn(40, 100)
-            mWebView.setInitialScale(finalScale)
+            settings.useWideViewPort = true
+            settings.loadWithOverviewMode = true
+            settings.setSupportZoom(true) // Keep zoom enabled for good UX
+            settings.builtInZoomControls = true
+            settings.displayZoomControls = false
 
         } else {
-            // Mobile mode settings (default)
-            mWebView.settings.apply {
-                userAgentString = WebSettings.getDefaultUserAgent(this@MainActivity)
-                useWideViewPort = true
-                loadWithOverviewMode = true
-            }
-            // Reset scale for mobile - let WebView decide
+            // Mobile defaults
+            settings.userAgentString = WebSettings.getDefaultUserAgent(this)
+            settings.useWideViewPort = false
+            settings.loadWithOverviewMode = true // Still true for mobile to fit content
+            settings.setSupportZoom(true)
+            settings.builtInZoomControls = true
+            settings.displayZoomControls = false
             mWebView.setInitialScale(0)
         }
+
+        // --- THIS IS THE NEW, AGGRESSIVE RESET ---
+
+        // 1. Aggressively clear all stored states
+        mWebView.clearCache(true)
+        mWebView.clearFormData()
+        mWebView.clearHistory()
+        mWebView.clearSslPreferences()
+
+        // 2. Force a fresh load of the URL. This is more reliable than reload().
+        if (!urlToReload.isNullOrEmpty() && urlToReload != "about:blank") {
+            mWebView.loadUrl(urlToReload)
+        } else {
+            // Fallback to the default URL if there's no current one
+            mWebView.loadUrl(DEFAULT_URL)
+        }
     }
+
 
     private fun toggleDesktopMode() {
         isDesktopMode = !isDesktopMode
         saveDesktopModePreference(isDesktopMode)
-        applyDesktopMode()
+        applyDesktopMode() // <-- This function already reloads the page
         updateDesktopModeMenuItem()
-        mWebView.reload()
+        // mWebView.reload() // <-- Remove this line
 
         val message = if (isDesktopMode) "Desktop mode enabled" else "Mobile mode enabled"
         showToast(message)
