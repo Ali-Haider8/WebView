@@ -19,7 +19,7 @@
             android:layout_height="wrap_content"
             android:layout_toStartOf="@id/deleteButton"
             android:layout_marginEnd="8dp"
-            android:text="Page Title"
+            android:text="@string/page_title"
             android:textColor="?attr/colorOnBackground"
             android:textSize="16sp"
             android:textStyle="bold"
@@ -34,10 +34,25 @@
             android:layout_toStartOf="@id/deleteButton"
             android:layout_marginTop="4dp"
             android:layout_marginEnd="8dp"
-            android:text="https://example.com"
+            android:text="@string/https_example_com"
             android:textColor="?attr/colorOnBackground"
             android:textSize="14sp"
             android:alpha="0.7"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/favoriteDate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/favoriteUrl"
+            android:layout_toStartOf="@id/deleteButton"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="8dp"
+            android:text="@string/date_2025_11_07_08_20_pm"
+            android:textColor="?attr/colorOnBackground"
+            android:textSize="12sp"
+            android:alpha="0.6"
             android:maxLines="1"
             android:ellipsize="end" />
 
@@ -50,7 +65,7 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/delete"
             android:src="@drawable/ic_delete"
-            android:tint="?attr/colorOnBackground" />
+            app:tint="?attr/colorOnBackground" />
 
     </RelativeLayout>
 

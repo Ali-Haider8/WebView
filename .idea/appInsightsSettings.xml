@@ -8,10 +8,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="com.ali8dev.webviewdemo" />
+                  <option name="mobileSdkAppId" value="1:763510795139:android:d6cc0b5aae53a02fec64b6" />
+                  <option name="projectId" value="webviewdemo-a4b65" />
+                  <option name="projectNumber" value="763510795139" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

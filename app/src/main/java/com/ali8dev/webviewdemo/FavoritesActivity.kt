@@ -13,6 +13,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.ali8dev.webviewdemo.adapter.FavoriteAdapter
 import com.ali8dev.webviewdemo.database.Favorite
 import com.ali8dev.webviewdemo.database.FavoriteDatabase
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdView
+import com.google.android.gms.ads.MobileAds
 
 class FavoritesActivity : AppCompatActivity() {
 
@@ -22,6 +25,9 @@ class FavoritesActivity : AppCompatActivity() {
     private lateinit var favoriteAdapter: FavoriteAdapter
     private lateinit var favoriteDatabase: FavoriteDatabase
     private val favorites = mutableListOf<Favorite>()
+
+
+    private lateinit var adView: AdView
 
     companion object {
         const val EXTRA_URL = "extra_url"
@@ -35,6 +41,12 @@ class FavoritesActivity : AppCompatActivity() {
         setupToolbar()
         setupRecyclerView()
         loadFavorites()
+
+        MobileAds.initialize(this) { initializationStatus ->
+            adView = findViewById(R.id.adView)
+            val adRequest = AdRequest.Builder().build()
+            adView.loadAd(adRequest)
+        }
     }
 
     private fun initializeViews() {
@@ -54,15 +66,11 @@ class FavoritesActivity : AppCompatActivity() {
     }
 
     private fun setupRecyclerView() {
-        favoriteAdapter = FavoriteAdapter(
-            favorites = favorites,
-            onItemClick = { favorite ->
-                openFavorite(favorite)
-            },
-            onDeleteClick = { favorite ->
-                showDeleteConfirmation(favorite)
-            }
-        )
+        favoriteAdapter = FavoriteAdapter(favorites = favorites, onItemClick = { favorite ->
+            openFavorite(favorite)
+        }, onDeleteClick = { favorite ->
+            showDeleteConfirmation(favorite)
+        })
 
         recyclerView.apply {
             layoutManager = LinearLayoutManager(this@FavoritesActivity)
@@ -98,14 +106,10 @@ class FavoritesActivity : AppCompatActivity() {
     }
 
     private fun showDeleteConfirmation(favorite: Favorite) {
-        AlertDialog.Builder(this)
-            .setTitle(getString(R.string.delete_favorite))
-            .setMessage(getString(R.string.delete_favorite_message))
+        AlertDialog.Builder(this).setTitle(getString(R.string.delete_favorite)).setMessage(getString(R.string.delete_favorite_message))
             .setPositiveButton(getString(R.string.delete)) { _, _ ->
                 deleteFavorite(favorite)
-            }
-            .setNegativeButton(getString(R.string.cancel), null)
-            .show()
+            }.setNegativeButton(getString(R.string.cancel), null).show()
     }
 
     private fun deleteFavorite(favorite: Favorite) {
@@ -120,12 +124,10 @@ class FavoritesActivity : AppCompatActivity() {
                 onBackPressed()
                 true
             }
+
             else -> super.onOptionsItemSelected(item)
         }
     }
 
-    override fun onBackPressed() {
-        super.onBackPressed()
-        finish()
-    }
+
 }

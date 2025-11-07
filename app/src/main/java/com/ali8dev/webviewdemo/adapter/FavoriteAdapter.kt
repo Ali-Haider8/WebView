@@ -8,6 +8,9 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.ali8dev.webviewdemo.R
 import com.ali8dev.webviewdemo.database.Favorite
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class FavoriteAdapter(
     private var favorites: MutableList<Favorite>,
@@ -18,6 +21,7 @@ class FavoriteAdapter(
     inner class FavoriteViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val titleTextView: TextView = itemView.findViewById(R.id.favoriteTitle)
         val urlTextView: TextView = itemView.findViewById(R.id.favoriteUrl)
+        val dateTextView: TextView = itemView.findViewById(R.id.favoriteDate)
         val deleteButton: ImageButton = itemView.findViewById(R.id.deleteButton)
     }
 
@@ -32,6 +36,7 @@ class FavoriteAdapter(
 
         holder.titleTextView.text = favorite.title
         holder.urlTextView.text = shortenUrl(favorite.url)
+        holder.dateTextView.text = formatDate(favorite.timestamp)
 
         holder.itemView.setOnClickListener {
             onItemClick(favorite)
@@ -55,6 +60,15 @@ class FavoriteAdapter(
         } else {
             url
         }
+    }
+
+    /**
+     * Format timestamp to readable date and time
+     */
+    private fun formatDate(timestamp: Long): String {
+        val date = Date(timestamp)
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd hh:mm a", Locale.getDefault())
+        return "Date: ${dateFormat.format(date)}"
     }
 
     /**

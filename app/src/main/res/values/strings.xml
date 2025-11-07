@@ -35,4 +35,10 @@
     <string name="delete_favorite_message">Are you sure you want to delete this favorite?</string>
     <string name="delete">Delete</string>
     <string name="cancel">Cancel</string>
+    <string name="page_title">Page Title</string>
+    <string name="https_example_com">https://example.com</string>
+    <string name="date_2025_11_07_08_20_pm">Date: 2025-11-07 08:20 PM</string>
+    <string name="check_for_updates">Check for Updates</string>
+    <string name="developer_ali88dev_gmail_com">Developer: ali88dev@gmail.com</string>
+    <string name="version_1_0">Version: 1.0</string>
 </resources>

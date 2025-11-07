@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "763510795139",
+    "project_id": "webviewdemo-a4b65",
+    "storage_bucket": "webviewdemo-a4b65.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:763510795139:android:d6cc0b5aae53a02fec64b6",
+        "android_client_info": {
+          "package_name": "com.ali8dev.webviewdemo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAXSFACs8Jd3dFq5IGnlQ4t0Pr3Rkt85V4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

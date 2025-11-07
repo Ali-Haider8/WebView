@@ -9,18 +9,23 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
+import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.ProgressBar
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
@@ -40,6 +45,11 @@ import com.ali8dev.webviewdemo.util.MyWebViewClient
 import com.ali8dev.webviewdemo.util.PermissionUtil
 import com.ali8dev.webviewdemo.util.UrlHandler
 import com.google.android.material.navigation.NavigationView
+import com.google.firebase.Firebase
+import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.firebase.analytics.analytics
+import com.google.firebase.analytics.logEvent
+import com.google.firebase.messaging.FirebaseMessaging
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
@@ -75,6 +85,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private val mAlertDialog = AlertDialog()
 
+    private lateinit var firebaseAnalytics: FirebaseAnalytics
+
     companion object {
         private const val STORAGE_PERMISSION_CODE = 100
         private const val PREFS_NAME = "WebViewPrefs"
@@ -94,6 +106,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         setupNavigationDrawer()
         setupBackPressHandler()
         checkStoragePermission()
+        askNotificationPermission()
 
         // Initialize favorites database
         favoriteDatabase = FavoriteDatabase(this)
@@ -109,6 +122,28 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             } else {
                 loadInitialUrl()
             }
+        }
+
+        Firebase.analytics.logEvent("launch app") {
+            param("item_name", "My Awesome Product")
+        }
+
+        // Obtain the FirebaseAnalytics instance.
+        firebaseAnalytics = Firebase.analytics
+
+
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (!task.isSuccessful) {
+                Log.w("TAG", "Fetching FCM registration token failed", task.exception)
+                return@addOnCompleteListener
+            }
+
+            // الحصول على الرمز الجديد
+            val token = task.result
+
+            // طباعته (للتجربة) أو إرساله للخادم الخاص بك
+            Log.d("TAG", "FCM Token: $token")
+            // sendTokenToServer(token)
         }
     }
 
@@ -366,7 +401,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 getString(R.string.terms_and_conditions), "terms_and_conditions.txt"
             )
             R.id.nav_settings -> showToast(getString(R.string.settings))
-            R.id.nav_about -> showToast(getString(R.string.about))
+            R.id.nav_about -> showAboutDialog()
             else -> return false
         }
 
@@ -533,6 +568,82 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             type = "text/plain"
         }
         startActivity(Intent.createChooser(shareIntent, getString(R.string.share_via)))
+    }
+
+    // Add this method to MainActivity.kt
+
+    private fun showAboutDialog() {
+        // Get app version
+        val versionName = try {
+            packageManager.getPackageInfo(packageName, 0).versionName
+        } catch (e: Exception) {
+            "Unknown"
+        }
+
+        val appName = getString(R.string.app_name)
+        val devEmail = "ali88dev@gmail.com" // Your email from terms_and_conditions.txt
+
+        // Create custom dialog view
+        val dialogView = layoutInflater.inflate(R.layout.dialog_about, null)
+
+        // Find views
+        val appNameText = dialogView.findViewById<TextView>(R.id.aboutAppName)
+        val versionText = dialogView.findViewById<TextView>(R.id.aboutVersion)
+        val emailText = dialogView.findViewById<TextView>(R.id.aboutEmail)
+        val updateButton = dialogView.findViewById<Button>(R.id.aboutUpdateButton)
+
+        // Set values
+        appNameText.text = appName
+        versionText.text = "Version: $versionName"
+        emailText.text = "Developer: $devEmail"
+
+        // Create dialog
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle(getString(R.string.about_app))
+            .setView(dialogView)
+            .setPositiveButton(getString(R.string.close)) { dialog, _ ->
+                dialog.dismiss()
+            }
+            .create()
+
+        // Handle update button click
+        updateButton.setOnClickListener {
+            val packageName = applicationContext.packageName
+            try {
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$packageName"))
+                startActivity(intent)
+            } catch (e: Exception) {
+                // If Play Store not available, open in browser
+                val intent = Intent(Intent.ACTION_VIEW,
+                    Uri.parse("https://play.google.com/store/apps/details?id=$packageName"))
+                startActivity(intent)
+            }
+        }
+
+        dialog.show()
+    }
+
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            // تم منح الإذن
+        } else {
+            // تم رفض الإذن، يمكنك توضيح أهمية الإشعارات للمستخدم
+        }
+    }
+
+    private fun askNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) { // (TIRAMISU = Android 13)
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
+                PackageManager.PERMISSION_GRANTED
+            ) {
+                // الإذن ممنوح مسبقاً
+            } else {
+                // اطلب الإذن
+                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
     }
 
     private fun setupBackPressHandler() {

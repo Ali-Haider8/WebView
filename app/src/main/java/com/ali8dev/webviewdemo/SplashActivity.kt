@@ -14,8 +14,11 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
+import com.google.firebase.Firebase
+import com.google.firebase.analytics.analytics
+import com.google.firebase.analytics.logEvent
 
 @SuppressLint("CustomSplashScreen")
 class SplashActivity : AppCompatActivity() {
@@ -45,6 +48,10 @@ class SplashActivity : AppCompatActivity() {
 
         // Start the splash sequence
         checkConnectionAndProceed()
+
+        setupBackPressHandler()
+
+
     }
 
     private fun checkConnectionAndProceed() {
@@ -77,6 +84,7 @@ class SplashActivity : AppCompatActivity() {
         retryButton.visibility = View.VISIBLE
     }
 
+    @SuppressLint("ObsoleteSdkInt")
     private fun isNetworkAvailable(): Boolean {
         val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
@@ -97,10 +105,11 @@ class SplashActivity : AppCompatActivity() {
         finish()
     }
 
-    override fun onBackPressed() {
-        // Prevent going back from splash screen
-        @Suppress("DEPRECATION")
-        super.onBackPressed()
-        finishAffinity() // Close the app completely
+    private fun setupBackPressHandler() {
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                finishAffinity()
+            }
+        })
     }
 }
