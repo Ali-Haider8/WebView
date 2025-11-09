@@ -22,6 +22,7 @@
             android:layout_height="wrap_content"
             android:background="?attr/colorPrimary"
             android:elevation="10dp"
+            android:visibility="visible"
             android:minHeight="?attr/actionBarSize"
             android:theme="@style/ToolbarTheme"
             app:layout_collapseMode="pin"

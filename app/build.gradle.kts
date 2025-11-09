@@ -71,5 +71,6 @@ dependencies {
     implementation("com.google.android.gms:play-services-ads:24.7.0")
     // إضافة الاعتمادية الخاصة بـ Cloud Messaging
     implementation("com.google.firebase:firebase-messaging")
+    implementation("com.onesignal:OneSignal:[5.4.0, 5.4.99]")
 
 }

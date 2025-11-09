@@ -74,7 +74,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     private var desktopModeMenuItem: MenuItem? = null
     private var favoriteMenuItem: MenuItem? = null
     var isNetworkAvailable = true
-        private set
+
 
     // Database
     private lateinit var favoriteDatabase: FavoriteDatabase
